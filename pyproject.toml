@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netease-music-insight"
+version = "1.0.0"
+description = "Export NetEase Cloud Music data and prepare it for AI analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "rhr-jz"}]
+dependencies = ["requests>=2.31,<3", "qrcode[pil]>=8,<9"]
+
+[project.scripts]
+netease-music-insight = "netease_music_insight.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["netease_music_insight*"]

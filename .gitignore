@@ -1,0 +1,27 @@
+.venv/
+.runtime/
+.cache/
+.state/
+api/
+api_unpack/
+api.zip
+api-*.log
+output/
+exports/
+cookies/
+logs/
+*.cookie
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+dist/
+*.spec
+*.exe
+# Private analysis from the original personal workspace
+个人音乐画像与八周计划.md
+music_analysis_summary.json
+analyze_music.py
+artist_metrics.py
+music_focus.py

@@ -1,0 +1,21 @@
+name: Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements.txt pyinstaller
+      - run: python -m unittest discover -s tests -v
+      - run: pyinstaller --onefile --name NetEaseMusicInsight-Windows run.py
+      - name: Publish executable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create ${{ github.ref_name }} dist/NetEaseMusicInsight-Windows.exe --title "NetEase Music Insight ${{ github.ref_name }}" --notes "首次公开版本：扫码登录、喜欢音乐/歌单/可用播放记录导出、AI-ready JSON 与音乐品味分析提示词。首次运行需要联网准备本地接口组件。"
