@@ -1,8 +1,8 @@
 """A quiet, dependency-free console interface for first-time users."""
-import os
 import re
 
 from .guidance import available_topics, prompt_for
+from .platform_utils import open_path
 
 
 PLATFORM_NAMES = {"netease": "网易云音乐", "qq": "QQ 音乐", "all": "两个平台"}
@@ -64,6 +64,8 @@ class ConsoleUI:
         elif "二维码已过期" in message:
             shown = ("二维码已过期，正在重新生成……" if "正在刷新" in message
                      else "二维码已过期。按 Enter 重新生成，或按 Q 返回平台选择。")
+        elif "窗口未能打开" in message:
+            shown = message
         elif "二维码图片" in message or "扫描二维码" in message:
             shown = "二维码已在新窗口打开。请用对应的音乐 App 扫码并在手机确认。"
         elif "等待扫码" in message:
@@ -170,12 +172,7 @@ class ConsoleUI:
             if answer == "1":
                 self.topic_menu(data, combined=combined)
             elif answer == "2":
-                if os.name == "nt":
-                    try:
-                        os.startfile(folder)
-                    except OSError:
-                        self.line(f"无法自动打开，请在文件管理器中进入：{folder}")
-                else:
+                if not open_path(folder):
                     self.line(f"请在文件管理器中进入：{folder}")
             elif answer == "3":
                 return

@@ -27,19 +27,39 @@ ChatGPT / Claude / Gemini / 其他支持文件上传的 AI
 - 歌单有无权限或下架内容时继续导出，并标出缺失范围。
 - 数据只保存在你的电脑中；程序不要求密码，也不上传数据到作者服务器。
 
-## 🚀 最快使用方法（Windows 10 / 11）
+## 🚀 最快使用方法
 
-### 方法一：下载 Windows 目录版
+### Windows 10 / 11：下载目录版
 
 1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载 `MusicInsight-Windows-Portable.zip`，完整解压后双击其中的 EXE。首次使用网易云时需要联网准备本地接口组件。
 2. 选择平台，使用相应手机 App 扫描自动打开的二维码并确认。
 3. 等待“数据已准备好”。打开结果文件夹，把 `music_for_ai.json` 上传给支持文件分析的 AI，再从 `AI_ANALYSIS_GUIDE.md` 选择一个问题复制提示词。选两个平台时，优先上传联合结果中的 `music_for_ai_combined.json`。
 
-### 方法二：源码运行
+### Windows 10 / 11：源码运行
 
 1. 安装 [Python 3.10+](https://www.python.org/downloads/windows/)（安装时勾选 **Add Python to PATH**），下载本仓库 ZIP 并解压。
 2. 双击 `一键运行.bat`。首次启动会自动安装 Python 依赖；仅网易云需要准备本地 Node.js 和接口组件。无需安装 Git。
 3. 扫码、等待导出，按窗口提示使用结果。
+
+### macOS：源码运行
+
+1. 安装 [Python 3.10+](https://www.python.org/downloads/macos/)；若要导出网易云音乐，还需安装 [Node.js 18+](https://nodejs.org/)。
+2. 下载本仓库 ZIP 并完整解压，然后双击 `一键运行.command`。首次启动会建立独立 Python 环境并安装依赖；网易云首次使用还会准备本地接口组件。
+3. 选择平台，用对应音乐 App 扫描自动打开的二维码并确认。导出后可在菜单中选择用 Finder 打开结果目录。
+
+如果 macOS 询问是否允许 Terminal 访问下载或文稿目录，请根据文件所在位置允许访问。无需安装 Git，也无需手动查找 Cookie。
+
+### Linux：源码运行
+
+安装 Python 3.10+；导出网易云还需 Node.js 18+。在仓库目录执行：
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python run.py
+```
+
+程序会尝试用系统的 `xdg-open` 打开二维码和结果文件夹；若桌面环境不支持，可按终端提示手动打开二维码图片。
 
 ```text
 Music Insight
@@ -77,11 +97,11 @@ raw/                       基础原始列表，便于核对
 
 本地接口组件来自 [TH911/NeteaseCloudMusicApi](https://github.com/TH911/NeteaseCloudMusicApi)（MIT）。它运行在 `127.0.0.1`，只在导出期间启动。首次启动通常需要下载组件和安装依赖，因此耗时可能超过五分钟；后续运行会直接复用。
 
-QQ 音乐使用 [QQMusicApi 0.7.3](https://github.com/L-1124/QQMusicApi/releases/tag/v0.7.3)（GPL-3.0-or-later）。项目 1.1 的许可及第三方声明见 [LICENSE](LICENSE) 和 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
+QQ 音乐使用 [QQMusicApi 0.7.3](https://github.com/L-1124/QQMusicApi/releases/tag/v0.7.3)（GPL-3.0-or-later）。许可及第三方声明见 [LICENSE](LICENSE) 和 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
 
 ## 需要帮助？
 
-- [快速开始](docs/QUICK_START.md) · [数据格式](docs/DATA_FORMAT.md) · [常见问题](docs/FAQ.md) · [隐私说明](PRIVACY.md)
+- [快速开始](docs/QUICK_START.md) · [数据格式](docs/DATA_FORMAT.md) · [常见问题](docs/FAQ.md) · [隐私说明](PRIVACY.md) · [项目架构](docs/ARCHITECTURE.md)
 - 若浏览器或杀毒软件拦截下载，请阅读[下载与安全说明](SECURITY.md)，不要关闭防护或强行运行。
 - `python run.py --version` 查看版本；`python run.py --provider netease|qq|all` 可免交互选择；`--fresh` 忽略最近 24 小时的缓存。
 - 开发者：`python -m unittest discover -s tests -v` 运行离线测试。

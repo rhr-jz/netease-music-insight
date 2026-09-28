@@ -1,7 +1,7 @@
-# Music Insight 1.2.0
+# Music Insight 1.3.0
 
-全新新手引导：欢迎页、平台选择、扫码状态、四步进度、易读的数据概况与结果文件说明。导出后可直接在终端选择分析方向或打开结果文件夹；常见错误提供重试指引，详细信息写入 `logs/error.log`。
+接受社区 macOS 兼容性贡献：新增可双击的 `一键运行.command` 源码入口，自动准备 Python 环境，并用系统默认应用打开登录二维码和结果文件夹。仅导出 QQ 音乐无需 Node.js；macOS / Linux 导出网易云需要 Node.js 18+。
 
-新增模块化 `AI_ANALYSIS_GUIDE.md` 和 `prompts/`：音乐全景、真实审美、核心歌手、听歌习惯、成长轨迹、音乐地图、音乐盲区、音乐谈资、八周听歌计划、歌单整理、情绪音乐、年度总结和跨平台对比。每段提示词均可单独复制；缺少可靠时间时隐藏相关时间分析，单平台不显示跨平台对比。保留旧版综合提示词和原有命令行参数。
+将系统文件打开操作统一放入 `platform_utils.py`，支持 Windows、macOS 与 Linux。跨系统测试扩展到三种操作系统，并新增系统打开和 Node.js 版本检查测试。保留 v1.2.0 的新手界面与模块化 AI 分析指南。
 
-Windows 继续发布目录版 ZIP。解压后运行其中的 EXE；若安全软件仍拦截，请勿关闭防护，提交拦截详情。QQMusicApi 采用 GPL-3.0-or-later；许可及第三方声明见 LICENSE 与 THIRD_PARTY_LICENSES.md。
+Windows 继续发布目录版 ZIP。若安全软件拦截，请勿关闭防护，提交拦截详情。许可与第三方声明见 LICENSE 与 THIRD_PARTY_LICENSES.md。

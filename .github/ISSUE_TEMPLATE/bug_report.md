@@ -4,7 +4,7 @@ about: 报告可复现的问题（请勿上传 Cookie 或个人导出文件）
 labels: bug
 ---
 
-**环境**：Windows 版本、源码版或 EXE 版、程序版本。
+**环境**：Windows / macOS / Linux 版本、源码版或 EXE 版、程序版本。
 
 **复现步骤**：
 

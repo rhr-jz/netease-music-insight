@@ -41,9 +41,17 @@ def _node(root, notify):
     installed = shutil.which("node")
     npm = shutil.which("npm.cmd") or shutil.which("npm")
     if installed and npm:
-        return installed, npm
+        try:
+            version = subprocess.run(
+                [installed, "-e", "process.exit(Number(process.versions.node.split('.')[0]) >= 18 ? 0 : 1)"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False,
+            )
+            if version.returncode == 0:
+                return installed, npm
+        except (OSError, subprocess.TimeoutExpired):
+            pass
     if sys.platform != "win32":
-        raise SetupError("未找到 Node.js，请安装 Node.js 18+ 后重试。")
+        raise SetupError("网易云导出需要 Node.js 18 或更新版本，请安装或更新后重试。")
     node_dir = root / ".runtime" / f"node-v{NODE_VERSION}-win-x64"
     node = node_dir / "node.exe"
     npm = node_dir / "npm.cmd"

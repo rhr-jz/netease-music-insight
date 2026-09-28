@@ -3,13 +3,13 @@
 Only read-only account endpoints are used. Credentials live in memory for this run.
 """
 import asyncio
-import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
 
 from ..api import ApiError
 from ..report import build_data, write_reports
+from ..platform_utils import open_path
 from ..utils import atomic_json, read_json, safe_name
 from .base import MusicProvider
 
@@ -123,9 +123,10 @@ class QQMusicProvider(MusicProvider):
                 qr = await asyncio.wait_for(session.get_qrcode(), 60)
                 with tempfile.TemporaryDirectory() as temp:
                     path = qr.save(Path(temp))
-                    self.notify(f"请使用 QQ 音乐 App 扫描二维码：{path}")
-                    if path and os.name == "nt":
-                        os.startfile(path)
+                    if path and open_path(path):
+                        self.notify(f"请使用 QQ 音乐 App 扫描二维码：{path}")
+                    else:
+                        self.notify(f"二维码窗口未能打开，请手动打开图片：{path}")
                     async for result in session.iter_events():
                         if result.event == QRCodeLoginEvents.SCAN:
                             self.notify("等待扫码或手机确认……")

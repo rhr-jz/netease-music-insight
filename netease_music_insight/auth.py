@@ -1,11 +1,11 @@
 """QR login. Credentials are held in memory and never written by this version."""
 import time
-import os
 from pathlib import Path
 
 import qrcode
 
 from .api import ApiError
+from .platform_utils import open_path
 
 
 class LoginBack(Exception):
@@ -25,15 +25,11 @@ def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, po
         if qr_path:
             qr_path.parent.mkdir(parents=True, exist_ok=True)
             qrcode.make(url).save(qr_path)
-            if os.name == "nt":
-                try:
-                    os.startfile(qr_path)
-                    opened_image = True
-                    show(f"二维码图片：{qr_path}")
-                except OSError:
-                    show("图片窗口未能打开，请用终端中的二维码扫码。")
-            else:
+            opened_image = open_path(qr_path)
+            if opened_image:
                 show(f"二维码图片：{qr_path}")
+            else:
+                show("图片窗口未能打开，请用终端中的二维码扫码。")
         if not opened_image:
             qr = qrcode.QRCode(border=2)
             qr.add_data(url)
