@@ -13,7 +13,7 @@
 
 ### 方法一：直接下载 EXE
 
-1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载 `NetEaseMusicInsight-Windows.exe`，放进一个可写的文件夹并双击。首次运行需要联网准备本地接口组件。
+1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载 `NetEaseMusicInsight-Windows.exe`，放进一个可写的文件夹并双击。也可下载 `NetEaseMusicInsight-Windows-Portable.zip`，完整解压后双击文件夹中的 EXE。首次运行需要联网准备本地接口组件。
 2. 使用网易云音乐 App 扫描自动打开的二维码，在手机上确认。
 3. 等待“完成”，按提示上传 `music_for_ai.json` 并复制 `AI_ANALYSIS_PROMPT.md` 给 ChatGPT、Claude 或 Gemini。
 
@@ -50,6 +50,7 @@ raw/                       基础原始列表，便于核对
 ## 需要帮助？
 
 - [快速开始](docs/QUICK_START.md) · [数据格式](docs/DATA_FORMAT.md) · [常见问题](docs/FAQ.md) · [隐私说明](PRIVACY.md)
+- 若浏览器或杀毒软件拦截下载，请阅读[下载与安全说明](SECURITY.md)，不要关闭防护或强行运行。
 - `python run.py --version` 查看版本；`python run.py --fresh` 忽略最近 24 小时的缓存并重新抓取。
 - 开发者：`python -m unittest discover -s tests -v` 运行离线测试。
 

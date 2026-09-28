@@ -2,7 +2,7 @@
 
 Export your NetEase Cloud Music listening data and turn it into an AI-ready personal music profile.
 
-On Windows 10/11, download the EXE from [Releases](https://github.com/rhr-jz/netease-music-insight/releases), double-click it, and scan the QR code with the NetEase Cloud Music app. Alternatively, install Python 3.10+, download this repository, and double-click `一键运行.bat`. The first run downloads local dependencies; Git is not required.
+On Windows 10/11, download the EXE from [Releases](https://github.com/rhr-jz/netease-music-insight/releases), double-click it, and scan the QR code with the NetEase Cloud Music app. A portable ZIP is also available; extract the full folder before running its EXE. Alternatively, install Python 3.10+, download this repository, and double-click `一键运行.bat`. The first run downloads local dependencies; Git is not required. If security software reports a threat, do not bypass the block; see [download security](SECURITY.md).
 
 The tool exports liked songs, accessible playlists and tracks, and the playback records currently available from NetEase. It writes `output/<nickname>_<uid>/music_for_ai.json`, `music_summary.md`, and `AI_ANALYSIS_PROMPT.md`. Upload the JSON to an AI assistant and paste the prompt to explore your music preferences.
 
