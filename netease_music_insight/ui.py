@@ -22,6 +22,33 @@ class ConsoleUI:
             self._progress_active = False
         print(message, flush=True)
 
+    def handle_event(self, event):
+        if event.kind == "login_started":
+            self.step(1, "登录账号", platform=PLATFORM_NAMES.get(event.provider))
+        elif event.kind == "export_started":
+            if event.provider == "combined":
+                self.step(3, "整理两个平台的联合数据")
+            else:
+                self.step(2, "获取音乐数据", platform=PLATFORM_NAMES.get(event.provider))
+        elif event.kind == "login_success":
+            self.event("登录成功")
+        elif event.message and event.kind not in {"login_failed", "export_failed", "export_cancelled"}:
+            self.event(event.message)
+
+    def present_qr(self, provider, path, url=None):
+        if open_path(path):
+            return True
+        if url:
+            import qrcode
+            qr = qrcode.QRCode(border=2)
+            qr.add_data(url)
+            qr.make(fit=True)
+            qr.print_ascii(invert=True)
+        return False
+
+    def on_qr_expired(self, provider):
+        return input("按 Enter 刷新二维码，或按 Q 返回平台选择：").strip().lower() != "q"
+
     def progress(self, message):
         """Update a single console line when the terminal supports it."""
         if not sys.stdout.isatty():

@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import logging
 import os
 import sys
@@ -7,9 +6,7 @@ from pathlib import Path
 
 from . import __version__
 from .auth import LoginBack
-from .bootstrap import local_api
-from .combined import build_combined, write_combined
-from .providers.netease import NetEaseProvider
+from .service import MusicInsightService
 from .ui import ConsoleUI, PLATFORM_NAMES
 
 
@@ -17,37 +14,6 @@ def app_root():
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parent.parent
-
-
-def _netease(root, fresh, ui):
-    name = PLATFORM_NAMES["netease"]
-    ui.step(1, "登录账号", platform=name)
-    with local_api(root, notify=ui.event) as base:
-        provider = NetEaseProvider(base, root, fresh=fresh, notify=ui.event)
-        try:
-            profile = provider.login()
-            ui.step(2, "获取音乐数据", platform=name)
-            result = provider.export(profile)
-            ui.data_check(result[1])
-            return result
-        finally:
-            provider.logout()
-
-
-async def _qq(root, fresh, ui):
-    from .providers.qqmusic import QQMusicProvider
-    name = PLATFORM_NAMES["qq"]
-    ui.step(1, "登录账号", platform=name)
-    provider = QQMusicProvider(root, fresh=fresh, notify=ui.event)
-    try:
-        profile = await provider.login()
-        ui.event("登录成功")
-        ui.step(2, "获取音乐数据", platform=name)
-        result = await provider.export(profile)
-        ui.data_check(result[1])
-        return result
-    finally:
-        await provider.logout()
 
 
 def _configure_console():
@@ -58,13 +24,15 @@ def _configure_console():
 
 
 def _export_selected(selected, args, root, ui, interactive):
+    service = MusicInsightService(root, fresh=args.fresh, emit=ui.handle_event,
+                                  present_qr=ui.present_qr, on_qr_expired=ui.on_qr_expired)
     results = {}
     keys = ("netease", "qq") if selected == "all" else (selected,)
     for key in keys:
         while True:
             try:
-                results[key] = (_netease(root, args.fresh, ui) if key == "netease"
-                                else asyncio.run(_qq(root, args.fresh, ui)))
+                results[key] = service.export_provider(key)
+                ui.data_check(results[key][1])
                 break
             except KeyboardInterrupt:
                 raise
@@ -85,11 +53,8 @@ def _export_selected(selected, args, root, ui, interactive):
     combined_folder = None
     combined_data = None
     if selected == "all" and len(results) == 2:
-        ui.step(3, "整理两个平台的联合数据")
         try:
-            combined_folder = root / "output" / "combined"
-            combined_data = build_combined(results["netease"][1], results["qq"][1])
-            write_combined(combined_folder, combined_data)
+            combined_folder, combined_data = service.combine(results["netease"][1], results["qq"][1])
         except Exception as exc:
             logging.exception("combined export failed")
             ui.error(exc)

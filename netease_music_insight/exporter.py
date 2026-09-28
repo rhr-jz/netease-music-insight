@@ -18,10 +18,10 @@ def _timestamp(value):
 
 
 class ExportService:
-    def __init__(self, api, root: Path, notify=print, *, fresh=False):
+    def __init__(self, api, root: Path, notify=None, *, fresh=False):
         self.api = api
         self.root = root
-        self.notify = notify
+        self.notify = notify or (lambda message: None)
         self.fresh = fresh
         self.issues = []
         self.index_incomplete = False

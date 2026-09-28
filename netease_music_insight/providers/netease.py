@@ -13,11 +13,15 @@ class NetEaseProvider(MusicProvider):
     capabilities = {"liked_songs": True, "playlists": True,
                     "playlist_tracks": True, "play_history": True}
 
-    def __init__(self, base_url, root: Path, *, fresh=False, notify=print):
+    def __init__(self, base_url, root: Path, *, fresh=False, notify=None,
+                 present_qr=None, on_qr_expired=None, check_cancel=None):
         self.api = MusicApi(base_url)
         self.root = root
         self.fresh = fresh
-        self.notify = notify
+        self.notify = notify or (lambda message: None)
+        self.present_qr = present_qr
+        self.on_qr_expired = on_qr_expired
+        self.check_cancel = check_cancel
 
     def login(self):
         legacy = self.root / ".state" / "cookie.txt"
@@ -35,7 +39,9 @@ class NetEaseProvider(MusicProvider):
                 except OSError:
                     pass
         with tempfile.TemporaryDirectory() as temp:
-            return qr_login(self.api, show=self.notify, qr_path=Path(temp) / "netease-login-qr.png")
+            return qr_login(self.api, show=self.notify, qr_path=Path(temp) / "netease-login-qr.png",
+                            present_qr=self.present_qr, on_expired=self.on_qr_expired,
+                            check_cancel=self.check_cancel)
 
     def export(self, profile):
         return ExportService(self.api, self.root, fresh=self.fresh, notify=self.notify).run(profile)

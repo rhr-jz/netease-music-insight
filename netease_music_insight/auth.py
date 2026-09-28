@@ -1,19 +1,21 @@
-"""QR login. Credentials are held in memory and never written by this version."""
+"""QR login with presentation and expiry decisions supplied by the caller."""
 import time
 from pathlib import Path
 
 import qrcode
 
 from .api import ApiError
-from .platform_utils import open_path
 
 
 class LoginBack(Exception):
     """The user chose to return to platform selection during QR login."""
 
 
-def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, poll_seconds=2):
+def qr_login(api, show, qr_path: Path | None = None, poll_seconds=2,
+             present_qr=None, on_expired=None, check_cancel=None):
     while True:
+        if check_cancel:
+            check_cancel()
         key = (api.get("/login/qr/key", auth=False).get("data") or {}).get("unikey")
         if not key:
             raise ApiError("无法生成登录二维码，请稍后重试。")
@@ -25,19 +27,16 @@ def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, po
         if qr_path:
             qr_path.parent.mkdir(parents=True, exist_ok=True)
             qrcode.make(url).save(qr_path)
-            opened_image = open_path(qr_path)
+            opened_image = bool(present_qr and present_qr(qr_path, url))
             if opened_image:
                 show(f"二维码图片：{qr_path}")
             else:
-                show("图片窗口未能打开，请用终端中的二维码扫码。")
-        if not opened_image:
-            qr = qrcode.QRCode(border=2)
-            qr.add_data(url)
-            qr.make(fit=True)
-            qr.print_ascii(invert=True)
+                show(f"图片窗口未能打开，请手动打开二维码图片：{qr_path}")
         show("请使用网易云音乐 App 扫码，并在手机上确认。")
         prior = None
         for _ in range(100):
+            if check_cancel:
+                check_cancel()
             time.sleep(poll_seconds)
             result = api.get("/login/qr/check", {"key": key, "noCookie": "true"}, auth=False)
             code = result.get("code")
@@ -59,5 +58,5 @@ def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, po
             if code == 800:
                 break
         show("二维码已过期。")
-        if input("按 Enter 刷新二维码，或按 Q 返回平台选择：").strip().lower() == "q":
+        if on_expired is not None and not on_expired():
             raise LoginBack()

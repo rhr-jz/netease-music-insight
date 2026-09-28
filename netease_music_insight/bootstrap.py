@@ -98,7 +98,8 @@ def _ensure_dependencies(api_dir, npm, notify):
 
 
 @contextlib.contextmanager
-def local_api(root: Path, notify=print):
+def local_api(root: Path, notify=None):
+    notify = notify or (lambda message: None)
     try:
         node, npm = _node(root, notify)
         api_dir = _api_source(root, notify)

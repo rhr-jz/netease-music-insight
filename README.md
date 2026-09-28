@@ -105,5 +105,6 @@ QQ 音乐使用 [QQMusicApi 0.7.3](https://github.com/L-1124/QQMusicApi/releases
 - 若浏览器或杀毒软件拦截下载，请阅读[下载与安全说明](SECURITY.md)，不要关闭防护或强行运行。
 - `python run.py --version` 查看版本；`python run.py --provider netease|qq|all` 可免交互选择；`--fresh` 忽略最近 24 小时的缓存。
 - 开发者：`python -m unittest discover -s tests -v` 运行离线测试。
+- GUI / Local Web 的共享 Core 架构与技术选型见[架构准备文档](docs/GUI_WEB_ARCHITECTURE.md)；目前正式发布入口仍为 CLI。
 
 本项目为个人数据导出工具，与网易云音乐及其关联公司无官方关系。仅导出自己有权访问的数据。

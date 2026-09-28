@@ -8,8 +8,8 @@ from datetime import datetime
 from pathlib import Path
 
 from ..api import ApiError
+from ..errors import ExportCancelled
 from ..report import build_data, write_reports
-from ..platform_utils import open_path
 from ..utils import atomic_json, read_json, safe_name
 from .base import MusicProvider
 
@@ -91,8 +91,11 @@ class QQMusicProvider(MusicProvider):
     capabilities = {"liked_songs": True, "playlists": True,
                     "playlist_tracks": True, "play_history": False}
 
-    def __init__(self, root: Path, *, fresh=False, notify=print, client=None):
-        self.root, self.fresh, self.notify = root, fresh, notify
+    def __init__(self, root: Path, *, fresh=False, notify=None, client=None,
+                 present_qr=None, check_cancel=None):
+        self.root, self.fresh, self.notify = root, fresh, notify or (lambda message: None)
+        self.present_qr = present_qr
+        self.check_cancel = check_cancel
         if client is None:
             try:
                 from qqmusic_api import Client, Platform
@@ -107,27 +110,38 @@ class QQMusicProvider(MusicProvider):
     async def _request(self, request, label):
         for attempt in range(3):
             try:
-                return await asyncio.wait_for(request, timeout=60)
+                result = await asyncio.wait_for(request, timeout=60)
+                if self.check_cancel:
+                    self.check_cancel()
+                return result
+            except ExportCancelled:
+                raise
             except Exception as exc:
                 if attempt == 2:
                     raise ApiError(f"{label}请求失败或超时；请稍后重试。") from exc
+                if self.check_cancel:
+                    self.check_cancel()
                 await asyncio.sleep(1.5 * (attempt + 1))
 
     async def login(self):
         from qqmusic_api.models.login import QRLoginType, QRCodeLoginEvents
         from qqmusic_api.modules.login_utils import QRCodeLoginSession
         for _ in range(3):
+            if self.check_cancel:
+                self.check_cancel()
             session = QRCodeLoginSession(self.client.login, QRLoginType.MOBILE,
                                          interval=1.5, timeout_seconds=180)
             try:
                 qr = await asyncio.wait_for(session.get_qrcode(), 60)
                 with tempfile.TemporaryDirectory() as temp:
                     path = qr.save(Path(temp))
-                    if path and open_path(path):
+                    if path and self.present_qr and self.present_qr(path):
                         self.notify(f"请使用 QQ 音乐 App 扫描二维码：{path}")
                     else:
                         self.notify(f"二维码窗口未能打开，请手动打开图片：{path}")
                     async for result in session.iter_events():
+                        if self.check_cancel:
+                            self.check_cancel()
                         if result.event == QRCodeLoginEvents.SCAN:
                             self.notify("已扫码，等待手机确认……")
                         elif result.event == QRCodeLoginEvents.CONF:
@@ -144,7 +158,7 @@ class QQMusicProvider(MusicProvider):
                         elif result.event == QRCodeLoginEvents.TIMEOUT:
                             self.notify("二维码已过期，正在刷新……")
                             break
-            except ApiError:
+            except (ApiError, ExportCancelled):
                 raise
             except Exception as exc:
                 raise ApiError("QQ 扫码登录失败，请检查网络后重试。") from exc

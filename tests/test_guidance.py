@@ -83,11 +83,10 @@ class GuidanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             netease, qq = sample(timed=True), sample("qq_music", timed=True)
-            async def fake_qq(_root, _fresh, _ui):
-                return root / "qq", qq
+            def fake_export(_service, provider):
+                return (root / "netease", netease) if provider == "netease" else (root / "qq", qq)
             with patch.object(cli, "app_root", return_value=root), \
-                 patch.object(cli, "_netease", return_value=(root / "netease", netease)), \
-                 patch.object(cli, "_qq", side_effect=fake_qq), \
+                 patch.object(cli.MusicInsightService, "export_provider", fake_export), \
                  patch.object(cli.logging, "basicConfig"), \
                  patch("builtins.input", side_effect=AssertionError("unexpected prompt")), \
                  contextlib.redirect_stdout(output):
