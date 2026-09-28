@@ -8,6 +8,10 @@ import qrcode
 from .api import ApiError
 
 
+class LoginBack(Exception):
+    """The user chose to return to platform selection during QR login."""
+
+
 def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, poll_seconds=2):
     while True:
         key = (api.get("/login/qr/key", auth=False).get("data") or {}).get("unikey")
@@ -17,16 +21,24 @@ def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, po
         url = data.get("qrurl")
         if not url:
             raise ApiError("无法生成登录二维码地址。")
+        opened_image = False
         if qr_path:
             qr_path.parent.mkdir(parents=True, exist_ok=True)
             qrcode.make(url).save(qr_path)
-            show(f"二维码图片：{qr_path}")
             if os.name == "nt":
-                os.startfile(qr_path)
-        qr = qrcode.QRCode(border=2)
-        qr.add_data(url)
-        qr.make(fit=True)
-        qr.print_ascii(invert=True)
+                try:
+                    os.startfile(qr_path)
+                    opened_image = True
+                    show(f"二维码图片：{qr_path}")
+                except OSError:
+                    show("图片窗口未能打开，请用终端中的二维码扫码。")
+            else:
+                show(f"二维码图片：{qr_path}")
+        if not opened_image:
+            qr = qrcode.QRCode(border=2)
+            qr.add_data(url)
+            qr.make(fit=True)
+            qr.print_ascii(invert=True)
         show("请使用网易云音乐 App 扫码，并在手机上确认。")
         prior = None
         for _ in range(100):
@@ -51,4 +63,5 @@ def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, po
             if code == 800:
                 break
         show("二维码已过期。")
-        input("按 Enter 刷新二维码，或按 Ctrl+C 退出：")
+        if input("按 Enter 刷新二维码，或按 Q 返回平台选择：").strip().lower() == "q":
+            raise LoginBack()

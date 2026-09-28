@@ -35,7 +35,7 @@ class NetEaseProvider(MusicProvider):
                 except OSError:
                     pass
         with tempfile.TemporaryDirectory() as temp:
-            return qr_login(self.api, qr_path=Path(temp) / "netease-login-qr.png")
+            return qr_login(self.api, show=self.notify, qr_path=Path(temp) / "netease-login-qr.png")
 
     def export(self, profile):
         return ExportService(self.api, self.root, fresh=self.fresh, notify=self.notify).run(profile)

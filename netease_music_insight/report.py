@@ -3,6 +3,7 @@ from collections import Counter
 from datetime import datetime
 
 from .utils import atomic_json, atomic_text
+from .guidance import write_guidance
 
 
 HISTORY_NOTE = "播放历史受网易云服务端可返回范围限制，不等于账号完整终身播放历史。"
@@ -223,6 +224,7 @@ def write_reports(folder, data):
     atomic_json(folder / "music_for_ai.json", data)
     atomic_text(folder / "music_summary.md", summary_markdown(data))
     atomic_text(folder / "AI_ANALYSIS_PROMPT.md", analysis_prompt(data))
+    write_guidance(folder, data)
 
 
 def analysis_prompt(data):

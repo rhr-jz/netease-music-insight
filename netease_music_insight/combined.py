@@ -4,6 +4,7 @@ import unicodedata
 from datetime import datetime
 
 from .utils import atomic_json, atomic_text
+from .guidance import write_guidance
 
 
 def _key(value):
@@ -87,3 +88,4 @@ def write_combined(folder, data):
 
 区分核心审美、阶段偏好、怀旧和功能性音乐，引用具体曲目或歌单作为证据。按 70% 熟悉、20% 邻近探索、10% 陌生探索给出八周可实践的听歌计划。若能联网，可核查当前 18–25 岁人群的音乐谈资并注明来源和时间。不要编造热度或用户的播放行为。
 """)
+    write_guidance(folder, data, combined=True)
