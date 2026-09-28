@@ -46,6 +46,14 @@ class ReportTests(unittest.TestCase):
             self.assertTrue((folder / "music_summary.md").exists())
             self.assertTrue((folder / "AI_ANALYSIS_PROMPT.md").exists())
 
+    def test_repeated_positions_do_not_inflate_unique_catalog(self):
+        data = build_data({"userId": 7}, [],
+                          [{"id": 1, "name": "重复", "created_by_user": True,
+                            "tracks": [song(10), song(10)]}], [])
+        self.assertEqual(data["statistics"]["playlist_song_positions"], 2)
+        self.assertEqual(data["statistics"]["unique_song_count"], 1)
+        self.assertEqual(data["song_catalog"][0]["playlist_ids"], [1])
+
     def test_filename(self):
         self.assertEqual(safe_name('A/B:*?"<>|'), "A_B_______")
         self.assertEqual(safe_name("CON"), "_CON")

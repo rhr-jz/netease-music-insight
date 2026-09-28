@@ -9,6 +9,9 @@ api-*.log
 output/
 exports/
 cookies/
+.qqmusic/
+credentials/
+*.token
 logs/
 *.cookie
 .env

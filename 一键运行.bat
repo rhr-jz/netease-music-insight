@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title NetEase Music Insight
+title Music Insight
 cd /d "%~dp0"
 
 where python >nul 2>nul
@@ -17,7 +17,7 @@ if not exist ".venv\Scripts\python.exe" (
   if errorlevel 1 goto setup_error
 )
 
-".venv\Scripts\python.exe" -c "import requests, qrcode, PIL" >nul 2>nul
+".venv\Scripts\python.exe" -c "import requests, qrcode, PIL, qqmusic_api" >nul 2>nul
 if errorlevel 1 (
   echo [2/2] 安装 Python 依赖...
   ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt

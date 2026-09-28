@@ -14,19 +14,22 @@ jobs:
           python-version: '3.13'
       - run: python -m pip install -r requirements.txt pyinstaller==6.16.0
       - run: python -m unittest discover -s tests -v
-      - run: pyinstaller --onefile --clean --name NetEaseMusicInsight-Windows run.py
-      - run: pyinstaller --onedir --clean --name NetEaseMusicInsight-Windows-Portable run.py
+      - run: pyinstaller --onedir --clean --noupx --name MusicInsight-Windows-Portable run.py
+      - run: .\dist\MusicInsight-Windows-Portable\MusicInsight-Windows-Portable.exe --version
       - name: Package and check Windows files
         shell: pwsh
         run: |
-          Copy-Item docs/PORTABLE_START.txt dist/NetEaseMusicInsight-Windows-Portable/START_HERE.txt
-          Compress-Archive -Path dist/NetEaseMusicInsight-Windows-Portable -DestinationPath dist/NetEaseMusicInsight-Windows-Portable.zip
+          Copy-Item docs/PORTABLE_START.txt dist/MusicInsight-Windows-Portable/START_HERE.txt
+          Copy-Item LICENSE dist/MusicInsight-Windows-Portable/LICENSE.txt
+          Copy-Item LICENSE_MIT_ORIGINAL dist/MusicInsight-Windows-Portable/LICENSE_MIT_ORIGINAL.txt
+          Copy-Item THIRD_PARTY_LICENSES.md dist/MusicInsight-Windows-Portable/THIRD_PARTY_LICENSES.md
+          Compress-Archive -Path dist/MusicInsight-Windows-Portable -DestinationPath dist/MusicInsight-Windows-Portable.zip
           $scanPath = (Resolve-Path dist).Path
           $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
           if ($defender -and $defender.AntivirusEnabled) {
             Start-MpScan -ScanType CustomScan -ScanPath $scanPath
           }
-          $assets = @('NetEaseMusicInsight-Windows.exe', 'NetEaseMusicInsight-Windows-Portable.zip')
+          $assets = @('MusicInsight-Windows-Portable.zip')
           $checksums = foreach ($asset in $assets) {
             $hash = (Get-FileHash -LiteralPath (Join-Path 'dist' $asset) -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $asset"
@@ -35,4 +38,4 @@ jobs:
       - name: Publish executable
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create ${{ github.ref_name }} dist/NetEaseMusicInsight-Windows.exe dist/NetEaseMusicInsight-Windows-Portable.zip dist/SHA256SUMS.txt --title "NetEase Music Insight ${{ github.ref_name }}" --notes "扫码登录、喜欢音乐/歌单/可用播放记录导出、AI-ready JSON 与音乐品味分析提示词。提供单文件 EXE 和目录版 ZIP；首次运行需联网。若安全软件报告威胁，请勿绕过拦截，改用源码版并提交 Issue。"
+        run: gh release create ${{ github.ref_name }} dist/MusicInsight-Windows-Portable.zip dist/SHA256SUMS.txt --title "Music Insight ${{ github.ref_name }}" --notes-file RELEASE_NOTES.md

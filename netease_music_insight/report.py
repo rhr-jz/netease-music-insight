@@ -21,6 +21,8 @@ def song_row(song):
         return None
     return {
         "id": song["id"],
+        "provider": "netease",
+        "provider_song_id": str(song["id"]),
         "name": song.get("name") or "",
         "artists": artist_text,
         "album": album.get("name", "") if isinstance(album, dict) else "",
@@ -50,7 +52,8 @@ def top_albums(songs, limit=10):
     return [{"name": name, "count": count} for name, count in counts.most_common(limit)]
 
 
-def build_data(profile, liked, playlists, history, issues=None, expected_liked=None, expected_playlists=None):
+def build_data(profile, liked, playlists, history, issues=None, expected_liked=None,
+               expected_playlists=None, provider="netease", capabilities=None):
     uid = profile["userId"]
     liked = unique_songs(liked)
     normalized_playlists = []
@@ -58,16 +61,20 @@ def build_data(profile, liked, playlists, history, issues=None, expected_liked=N
     for song in liked:
         catalog[str(song["id"])] = {**song, "liked": True, "playlist_ids": []}
     for playlist in playlists:
-        tracks = unique_songs(playlist.get("tracks", []))
+        tracks = [song for song in playlist.get("tracks", []) if song and song.get("id") is not None]
         normalized = {**playlist, "tracks": tracks, "track_count": playlist.get("track_count", len(tracks))}
         normalized_playlists.append(normalized)
         for song in tracks:
             key = str(song["id"])
             if key not in catalog:
                 catalog[key] = {**song, "liked": False, "playlist_ids": []}
-            catalog[key]["playlist_ids"].append(playlist["id"])
+            if playlist["id"] not in catalog[key]["playlist_ids"]:
+                catalog[key]["playlist_ids"].append(playlist["id"])
     owned = sum(p.get("created_by_user") is True for p in normalized_playlists)
     positions = sum(len(p["tracks"]) for p in normalized_playlists)
+    playlist_songs = [song for playlist in normalized_playlists for song in playlist["tracks"]]
+    repeated = sorted((s for s in catalog.values() if len(s["playlist_ids"]) > 1),
+                      key=lambda s: len(s["playlist_ids"]), reverse=True)
     issues = issues or []
     stats = {
         "liked_song_count": len(liked),
@@ -82,34 +89,57 @@ def build_data(profile, liked, playlists, history, issues=None, expected_liked=N
         "top_artists_in_likes": top_artists(liked),
         "top_albums_in_likes": top_albums(liked),
         "top_artists_in_history_by_play_count": top_artists(history, weighted=True),
+        "top_artists_in_playlists_by_occurrence": top_artists(playlist_songs),
+        "track_occurrences": positions + len(liked),
+        "unique_tracks": len(catalog),
+        "songs_in_multiple_playlists": sum(len(s["playlist_ids"]) > 1 for s in catalog.values()),
+        "repeated_playlist_songs": [
+            {"id": s["id"], "name": s["name"], "artists": s.get("artists") or "",
+             "playlist_count": len(s["playlist_ids"])} for s in repeated[:20]],
+        "liked_songs_with_time": sum(bool(s.get("liked_at")) for s in liked),
+        "playlists_with_creation_time": sum(bool(p.get("created_at")) for p in normalized_playlists),
+        "playlists_with_subscription_time": sum(bool(p.get("subscribed_at")) for p in normalized_playlists),
+        "playlists_with_favorite_order_time": sum(bool(p.get("favorite_order_at")) for p in normalized_playlists),
     }
+    capabilities = capabilities or {"liked_songs": True, "playlists": True,
+                                    "playlist_tracks": True, "play_history": True}
     return {
         "export_meta": {
             "exported_at": datetime.now().astimezone().isoformat(),
-            "source": "NetEase Cloud Music",
+            "source": "QQ Music" if provider == "qq_music" else "NetEase Cloud Music",
+            "provider": provider,
             "status": "partial" if issues else "complete",
-            "notes": HISTORY_NOTE,
+            "notes": HISTORY_NOTE if provider == "netease" else "QQ 音乐播放历史尚未经过真实账号验证，本次不包含。",
             "issues": issues,
         },
-        "user_profile": {"uid": uid, "nickname": profile.get("nickname") or "网易云用户"},
+        "user_profile": {"uid": uid, "user_id": str(uid), "provider": provider,
+                         "nickname": profile.get("nickname") or ("QQ音乐用户" if provider == "qq_music" else "网易云用户"),
+                         "avatar": profile.get("avatar") or ""},
         "liked_songs": liked,
         "playlists": normalized_playlists,
         "song_catalog": list(catalog.values()),
         "play_history": history,
         "statistics": stats,
+        "capabilities": capabilities,
     }
 
 
 def summary_markdown(data):
     profile, stats = data["user_profile"], data["statistics"]
+    is_qq = data["export_meta"].get("provider") == "qq_music"
+    source = "QQ音乐" if is_qq else "网易云音乐"
     def lines(items):
         return "\n".join(f"- {item['name']}：{item['count']}" for item in items) or "- 暂无可用数据"
     playlists = "\n".join(
-        f"- {p['name']}（{'自建' if p['created_by_user'] else '收藏'}，可获取 {len(p['tracks'])}/{p['track_count']} 首）"
+        f"- {p['name']}（{'自建' if p['created_by_user'] else '收藏'}，可获取 {len(p['tracks'])}/{p['track_count']} 首；"
+        f"创建于 {p.get('created_at') or '未知'}；收藏于 {p.get('subscribed_at') or '未知'}；"
+        f"收藏排序时间 {p.get('favorite_order_at') or '未知'}）"
         for p in data["playlists"]
     ) or "- 暂无可用歌单"
     issues = "\n".join(f"- {issue}" for issue in data["export_meta"]["issues"]) or "- 无"
-    return f"""# 我的网易云音乐数据
+    timed_likes = "\n".join(f"- {s['name']} — {s['liked_at']}" for s in data["liked_songs"] if s.get("liked_at")) or "- 平台接口没有返回可靠的逐首收藏时间"
+    history_note = data["export_meta"]["notes"]
+    return f"""# 我的{source}数据
 
 账号：{profile['nickname']}（UID {profile['uid']}）
 导出时间：{data['export_meta']['exported_at']}
@@ -120,6 +150,13 @@ def summary_markdown(data):
 - 歌单：{stats['playlist_count']} / {stats['playlist_expected']} 个；自建 {stats['created_playlist_count']}，收藏 {stats['subscribed_playlist_count']}
 - 歌单歌曲位置：{stats['playlist_song_positions']}；全部去重歌曲：{stats['unique_song_count']}
 - 可获取播放记录：{stats['play_history_count']} 条
+- 具有可靠收藏时间的歌曲：{stats['liked_songs_with_time']} / {stats['liked_song_count']}
+- 具有创建时间的歌单：{stats['playlists_with_creation_time']}；具有收藏时间的歌单：{stats['playlists_with_subscription_time']}
+- 具有收藏排序时间的歌单：{stats['playlists_with_favorite_order_time']}（不一定等于首次收藏日期）
+
+## 歌曲收藏时间（仅列接口实际返回的时间）
+
+{timed_likes}
 
 ## 喜欢音乐中出现最多的歌手
 
@@ -128,6 +165,14 @@ def summary_markdown(data):
 ## 喜欢音乐中出现最多的专辑
 
 {lines(stats['top_albums_in_likes'])}
+
+## 歌单中出现最多的歌手（按歌曲位置）
+
+{lines(stats['top_artists_in_playlists_by_occurrence'])}
+
+## 跨多个歌单重复出现的歌曲
+
+{chr(10).join(f"- {s['name']} / {s['artists']}：{s['playlist_count']} 个歌单" for s in stats['repeated_playlist_songs']) or '- 暂无'}
 
 ## 可获取播放记录中播放次数较多的歌手
 
@@ -140,7 +185,7 @@ def summary_markdown(data):
 ## 数据检查与说明
 
 - 状态：{data['export_meta']['status']}
-- {HISTORY_NOTE}
+- {history_note}
 - 歌单内重复歌曲按歌曲 ID 去重，song_catalog 保留了歌曲属于哪些歌单。
 - 无权限、下架或接口失败的内容可能缺失；请查看下面的问题列表。
 
@@ -177,4 +222,14 @@ PROMPT = """# AI 音乐品味分析提示词
 def write_reports(folder, data):
     atomic_json(folder / "music_for_ai.json", data)
     atomic_text(folder / "music_summary.md", summary_markdown(data))
-    atomic_text(folder / "AI_ANALYSIS_PROMPT.md", PROMPT)
+    atomic_text(folder / "AI_ANALYSIS_PROMPT.md", analysis_prompt(data))
+
+
+def analysis_prompt(data):
+    if data["export_meta"].get("provider") != "qq_music":
+        return PROMPT + "\n请优先使用数据中实际存在的 `liked_at`、`created_at`、`subscribed_at` 判断偏好变化；时间缺失时不要根据列表顺序推断。\n"
+    return PROMPT.replace("播放历史受网易云服务端限制，不代表账号完整终身播放历史；", "QQ 音乐播放历史不可用，请勿把空列表理解为用户未播放；").replace(
+        "结合喜欢歌曲、自建歌单、收藏歌单和可获取播放记录", "结合喜欢歌曲、自建歌单、收藏歌单及其可靠时间字段").replace(
+        "比较收藏与播放是否一致", "比较不同歌单与收藏的重合情况").replace(
+        "注明来自喜欢、歌单还是可获取播放记录", "注明来自喜欢、自建歌单还是收藏歌单").replace(
+        "播放历史受网易云服务端限制", "QQ 音乐播放历史目前不可用") + "\n本次数据来自 QQ 音乐。喜欢歌曲、主动创建的歌单和收藏的他人歌单证据强度不同。`favorite_order_at` 是 QQ 收藏歌单排序时间，不保证等于首次收藏日期。若有真实收藏或创建时间，可分析阶段变化；时间缺失时不要猜测。\n"

@@ -7,6 +7,16 @@ from .report import build_data, song_row, write_reports
 from .utils import atomic_json, read_json, safe_name
 
 
+def _timestamp(value):
+    if not value:
+        return None
+    from datetime import datetime
+    try:
+        return datetime.fromtimestamp(int(value) / 1000).astimezone().isoformat()
+    except (TypeError, ValueError, OverflowError, OSError):
+        return None
+
+
 class ExportService:
     def __init__(self, api, root: Path, notify=print, *, fresh=False):
         self.api = api
@@ -101,6 +111,20 @@ class ExportService:
         if self.index_incomplete:
             (cache / "playlist_index.json").unlink(missing_ok=True)
         playlists = []
+        liked_times = {}
+        liked_list = next((item for item in index if item.get("specialType") == 5
+                           and str((item.get("creator") or {}).get("userId")) == str(uid)), None)
+        if liked_list:
+            try:
+                detail = self._cached(cache / "liked_playlist_detail.json",
+                                      lambda: self.api.get("/playlist/detail", {"id": liked_list["id"]}, timeout=60))
+                for entry in (detail.get("playlist") or {}).get("trackIds") or []:
+                    if entry.get("id") and entry.get("at"):
+                        liked_times[str(entry["id"])] = _timestamp(entry["at"])
+            except ApiError as exc:
+                self.issues.append(f"逐首喜欢时间未获取：{exc}")
+        for song in liked:
+            song["liked_at"] = liked_times.get(str(song["id"]))
         for n, item in enumerate(index, 1):
             pid = item.get("id")
             if not pid:
@@ -125,6 +149,8 @@ class ExportService:
                 "creator": creator.get("nickname") or "",
                 "creator_user_id": creator.get("userId"),
                 "created_by_user": str(creator.get("userId")) == str(uid),
+                "created_at": _timestamp(item.get("createTime")),
+                "subscribed_at": _timestamp(item.get("subscribedTime")),
                 "track_count": count,
                 "tracks": tracks,
             })
@@ -134,16 +160,20 @@ class ExportService:
         self.notify("[3/4] 获取可用播放记录……")
         try:
             history = self._cached(cache / "play_history.json", lambda: self._history(uid))
+            history_available = True
         except LoginExpired:
             raise
         except ApiError as exc:
             history = []
+            history_available = False
             self.issues.append(f"播放记录未获取：{exc}")
         self.notify(f"✓ 可用播放记录：{len(history)} 条")
 
         self.notify("[4/4] 生成 AI 数据与提示词……")
         data = build_data(profile, liked, playlists, history, self.issues,
                           expected_liked=len(liked_ids), expected_playlists=len(index))
+        data["data_availability"] = {"play_history": {"available": history_available,
+            "reason": None if history_available else "网易云本次未返回可用播放记录。"}}
         write_reports(folder, data)
         raw = folder / "raw"
         atomic_json(raw / "liked_ids.json", liked_ids)
