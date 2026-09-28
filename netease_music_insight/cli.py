@@ -101,6 +101,7 @@ def _export_selected(selected, args, root, ui, interactive):
             ui.result(PLATFORM_NAMES[key], folder, data)
         if combined_folder is not None:
             ui.line("\n两个平台的联合画像也已生成。")
+            ui.line(f"  两个平台合计独立歌曲  {combined_data['statistics']['combined_unique_tracks']} 首")
             ui.files(combined_folder, combined=True)
         primary_folder, primary_data = ((combined_folder, combined_data) if combined_folder is not None
                                         else next(iter(results.values())))

@@ -129,7 +129,7 @@ class QQMusicProvider(MusicProvider):
                         self.notify(f"二维码窗口未能打开，请手动打开图片：{path}")
                     async for result in session.iter_events():
                         if result.event == QRCodeLoginEvents.SCAN:
-                            self.notify("等待扫码或手机确认……")
+                            self.notify("已扫码，等待手机确认……")
                         elif result.event == QRCodeLoginEvents.CONF:
                             self.notify("已确认，正在登录……")
                         elif result.event == QRCodeLoginEvents.DONE:

@@ -61,8 +61,22 @@ class GuidanceTests(unittest.TestCase):
             ui.result("QQ 音乐", Path("output/测试"), sample("qq_music"))
         shown = output.getvalue()
         self.assertIn("用对应音乐 App 扫码", shown)
-        self.assertIn("上传给 AI 的主要文件", shown)
+        self.assertIn("上传给 AI，里面是整理好的音乐数据", shown)
         self.assertIn("AI_ANALYSIS_GUIDE.md", shown)
+
+    def test_console_scan_state_and_next_steps(self):
+        output = io.StringIO()
+        ui = ConsoleUI()
+        with contextlib.redirect_stdout(output):
+            ui.event("等待扫码……")
+            ui.event("已扫码，等待手机确认……")
+            ui.event("已确认，正在登录……")
+            ui.next_ideas()
+        shown = output.getvalue()
+        self.assertLess(shown.index("等待扫码"), shown.index("已扫码，请在手机上确认"))
+        self.assertLess(shown.index("已扫码，请在手机上确认"), shown.index("手机已确认"))
+        for title in ("真实音乐审美", "真正喜欢的歌手", "音乐地图", "音乐社交谈资", "8 周听歌计划"):
+            self.assertIn(title, shown)
 
     def test_legacy_all_argument_generates_combined_without_prompting(self):
         output = io.StringIO()

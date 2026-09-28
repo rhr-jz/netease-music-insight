@@ -1,5 +1,6 @@
 """A quiet, dependency-free console interface for first-time users."""
 import re
+import sys
 
 from .guidance import available_topics, prompt_for
 from .platform_utils import open_path
@@ -12,9 +13,24 @@ class ConsoleUI:
     def __init__(self):
         self._last_step = None
         self._last_event = None
+        self._progress_active = False
+        self._progress_width = 0
 
     def line(self, message=""):
+        if self._progress_active:
+            print(flush=True)
+            self._progress_active = False
         print(message, flush=True)
+
+    def progress(self, message):
+        """Update a single console line when the terminal supports it."""
+        if not sys.stdout.isatty():
+            self.line("  " + message)
+            return
+        shown = "  " + message
+        self._progress_width = max(self._progress_width, len(shown))
+        print("\r" + shown.ljust(self._progress_width), end="", flush=True)
+        self._progress_active = True
 
     def welcome(self, version):
         self.line("=" * 48)
@@ -68,10 +84,12 @@ class ConsoleUI:
             shown = message
         elif "二维码图片" in message or "扫描二维码" in message:
             shown = "二维码已在新窗口打开。请用对应的音乐 App 扫码并在手机确认。"
-        elif "等待扫码" in message:
-            shown = "等待扫码或手机确认……"
-        elif "已扫码" in message or "已确认" in message:
+        elif "已扫码" in message:
+            shown = "已扫码，请在手机上确认……"
+        elif "已确认" in message:
             shown = "手机已确认，正在登录……"
+        elif "等待扫码" in message:
+            shown = "等待扫码……"
         elif "登录成功" in message or "已迁移旧版登录状态" in message:
             shown = "登录成功。"
         elif "账号：" in message:
@@ -80,6 +98,8 @@ class ConsoleUI:
             shown = "正在获取喜欢歌曲……"
         elif "喜欢音乐：" in message and "/" in message:
             shown = message.replace("喜欢音乐", "喜欢歌曲")
+            self.progress(shown)
+            return
         elif "✓ 喜欢音乐：" in message or "✓ 我喜欢：" in message:
             shown = message.replace("喜欢音乐", "喜欢歌曲").replace("我喜欢", "喜欢歌曲")
         elif "获取歌单" in message or "获取自建与收藏歌单" in message:
@@ -89,6 +109,8 @@ class ConsoleUI:
         elif "歌单进度" in message:
             match = re.search(r"(\d+)\s*/\s*(\d+)", message)
             shown = f"歌单歌曲：已整理 {match.group(1)} / {match.group(2)} 个歌单" if match else "正在整理歌单歌曲……"
+            self.progress(shown)
+            return
         elif "播放记录" in message:
             shown = "正在读取可获取的播放记录……" if "获取" in message else message
         elif "生成 AI" in message or "写入 AI" in message or "整理数据" in message:
@@ -128,11 +150,13 @@ class ConsoleUI:
 
     def result(self, name, folder, data):
         stats = data["statistics"]
-        self.line(f"\n{name}：数据已准备好")
+        self.line(f"\n{name}：导出完成，你的音乐数据已经准备好了")
         self.line(f"  喜欢歌曲  {stats['liked_song_count']} 首")
         self.line(f"  歌单      {stats['playlist_count']} 个")
         self.line(f"  独立歌曲  {stats['unique_song_count']} 首")
         history = data.get("data_availability", {}).get("play_history", {})
+        if not history and not data.get("capabilities", {}).get("play_history", True):
+            history = {"available": False}
         if history.get("available", True):
             self.line(f"  播放记录  {stats['play_history_count']} 条（平台可获取范围）")
         else:
@@ -148,7 +172,7 @@ class ConsoleUI:
         self.line("  数据检查：")
         self.line(f"    喜欢歌曲  {stats['liked_song_count']} / {expected_likes if expected_likes is not None else '未知'}")
         self.line(f"    歌单      {stats['playlist_count']} / {expected_lists if expected_lists is not None else '未知'}")
-        self.line(f"    歌单歌曲位置  {stats['playlist_song_positions']}")
+        self.line(f"    歌单内歌曲  {stats['playlist_song_positions']} 首（同一首出现在多个歌单会重复计数）")
         issues = data["export_meta"].get("issues") or []
         self.line(f"    需要留意  {len(issues)} 项" if issues else "    检查完成，未记录数据缺口。")
 
@@ -156,13 +180,19 @@ class ConsoleUI:
         filename = "music_for_ai_combined.json" if combined else "music_for_ai.json"
         summary = "music_summary_combined.md" if combined else "music_summary.md"
         self.line(f"\n结果文件夹：{folder}")
-        self.line(f"  {filename}  ← 上传给 AI 的主要文件")
-        self.line(f"  {summary}  ← 自己查看的数据摘要")
-        self.line("  AI_ANALYSIS_GUIDE.md  ← 按兴趣选择一个问题和对应提示词")
-        self.line("  prompts/  ← 每个问题单独存放，方便复制")
+        self.line(f"  {filename}  ← 上传给 AI，里面是整理好的音乐数据")
+        self.line(f"  {summary}  ← 自己快速查看的听歌摘要")
+        self.line("  AI_ANALYSIS_GUIDE.md  ← 用普通话说明每个分析方向和可复制的问题")
+        self.line("  prompts/  ← 每个分析方向的独立提示词")
 
     def next_ideas(self):
-        self.line("\n接下来可以分析：我喜欢什么、最重要的歌手、音乐地图、同龄人谈资或 8 周听歌计划。")
+        self.line("\n你接下来可以这样分析：")
+        self.line("  1 我到底喜欢什么音乐？          → 真实音乐审美")
+        self.line("  2 我真正喜欢哪些歌手？          → 真正喜欢的歌手")
+        self.line("  3 有哪些可能喜欢的新音乐？      → 音乐地图 / 音乐盲区")
+        self.line("  4 想和同龄人聊音乐？            → 音乐社交谈资")
+        self.line("  5 想开始系统听歌？              → 8 周听歌计划")
+        self.line("完整问题和提示词保存在 AI_ANALYSIS_GUIDE.md。")
 
     def after_export(self, folder, data, *, combined=False):
         self.next_ideas()
