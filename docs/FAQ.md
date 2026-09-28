@@ -6,7 +6,7 @@
 
 ## 首次启动很慢
 
-源码版会建立 Python 虚拟环境。程序可能还会下载便携 Node.js、本地接口代码并安装其依赖。需要访问 Python 包索引、GitHub、Node.js 官网和 npm 仓库。后续运行会复用已下载的组件。
+源码版会建立 Python 虚拟环境。程序还会下载本地接口代码并安装其依赖；Windows 在没有 Node.js 时会准备便携版本，macOS 需要预先安装 Node.js 18+。首次运行需要访问 Python 包索引、GitHub、Node.js 官网和 npm 仓库，后续运行会复用已下载的组件。
 
 ## 为什么播放记录少于我的真实听歌历史？
 
@@ -22,7 +22,11 @@
 
 ## 我需要安装 Git 或手动找 Cookie 吗？
 
-不需要。源码版需要 Python，首次联网准备其他组件；EXE 版不需要 Python。登录只需手机扫码。
+不需要。源码版需要 Python；macOS 源码版还需要 Node.js 18+，Windows EXE 版不需要预装 Python 或 Node.js。登录只需手机扫码。
+
+## macOS 提示无法打开启动脚本怎么办？
+
+请确认仓库 ZIP 已完整解压，并双击带有 `.command` 后缀的 `一键运行.command`。如果脚本被意外移除了执行权限，可在仓库目录运行 `chmod +x 一键运行.command` 后重试。
 
 ## Edge 提示“检测到病毒”怎么办？
 

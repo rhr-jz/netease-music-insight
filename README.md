@@ -9,19 +9,27 @@
 - 歌单有无权限或下架内容时继续导出，并标出缺失范围。
 - 数据只保存在你的电脑中；程序不要求密码，也不上传数据到作者服务器。
 
-## 🚀 最快使用方法（Windows 10 / 11）
+## 🚀 最快使用方法
 
-### 方法一：直接下载 EXE
+### Windows 10 / 11：直接下载 EXE
 
 1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载 `NetEaseMusicInsight-Windows.exe`，放进一个可写的文件夹并双击。也可下载 `NetEaseMusicInsight-Windows-Portable.zip`，完整解压后双击文件夹中的 EXE。首次运行需要联网准备本地接口组件。
 2. 使用网易云音乐 App 扫描自动打开的二维码，在手机上确认。
 3. 等待“完成”，按提示上传 `music_for_ai.json` 并复制 `AI_ANALYSIS_PROMPT.md` 给 ChatGPT、Claude 或 Gemini。
 
-### 方法二：源码运行
+### Windows 10 / 11：源码运行
 
 1. 安装 [Python 3.10+](https://www.python.org/downloads/windows/)（安装时勾选 **Add Python to PATH**），下载本仓库 ZIP 并解压。
 2. 双击 `一键运行.bat`。首次启动会自动安装 Python 依赖，并在需要时准备本地 Node.js 和网易云接口组件；无需安装 Git。
 3. 扫码、等待导出，按窗口提示使用结果。
+
+### macOS：源码运行
+
+1. 安装 [Python 3.10+](https://www.python.org/downloads/macos/) 和 [Node.js 18+](https://nodejs.org/)；推荐 Node.js LTS 版本。
+2. 下载本仓库 ZIP 并完整解压，然后双击 `一键运行.command`。首次启动会建立独立 Python 环境、安装依赖并准备本地网易云接口组件。
+3. 使用网易云音乐 App 扫描自动打开的二维码并确认。导出完成后，Finder 会自动打开结果目录。
+
+如果 macOS 询问是否允许 Terminal 访问下载或文稿目录，请根据文件所在位置允许访问。无需安装 Git，也无需手动查找 Cookie。
 
 ```text
 欢迎使用 NetEase Music Insight

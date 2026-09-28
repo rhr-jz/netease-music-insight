@@ -1,11 +1,11 @@
 """QR login. Credentials are held in memory and never written by this version."""
 import time
-import os
 from pathlib import Path
 
 import qrcode
 
 from .api import ApiError
+from .platform_utils import open_path
 
 
 def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, poll_seconds=2):
@@ -21,8 +21,7 @@ def qr_login(api, show=lambda text: print(text), qr_path: Path | None = None, po
             qr_path.parent.mkdir(parents=True, exist_ok=True)
             qrcode.make(url).save(qr_path)
             show(f"二维码图片：{qr_path}")
-            if os.name == "nt":
-                os.startfile(qr_path)
+            open_path(qr_path)
         qr = qrcode.QRCode(border=2)
         qr.add_data(url)
         qr.make(fit=True)

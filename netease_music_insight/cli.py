@@ -10,6 +10,7 @@ from .api import ApiError, LoginExpired, MusicApi
 from .auth import qr_login
 from .bootstrap import SetupError, local_api
 from .exporter import ExportService
+from .platform_utils import open_path
 
 
 def app_root():
@@ -67,8 +68,7 @@ def main(argv=None):
             print(f"本次有 {len(data['export_meta']['issues'])} 项数据可能不完整，详情见 music_summary.md。")
         print("下一步：打开 ChatGPT / Claude / Gemini，上传 music_for_ai.json，"
               "再复制 AI_ANALYSIS_PROMPT.md 的内容。")
-        if os.name == "nt":
-            os.startfile(folder)
+        open_path(folder)
         return 0
     except KeyboardInterrupt:
         print("\n已取消。下次运行可继续使用最近 24 小时的缓存。")
