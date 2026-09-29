@@ -106,11 +106,11 @@ class DesktopTests(unittest.TestCase):
             self.assertEqual(len(state["files"]), 3)
             self.assertEqual(FakeService.instances[-1].providers, ["netease", "qq"])
             self.assertTrue(FakeService.instances[-1].fresh)
-            self.assertEqual(FakeService.instances[-1].output_dir, target)
+            self.assertEqual(FakeService.instances[-1].output_dir, target.resolve())
             restored = DesktopBridge(Path(temp))
             self.assertEqual(restored.snapshot()["state"]["settings"]["theme"], "light")
             self.assertEqual(restored.snapshot()["state"]["settings"]["output_dir"],
-                             str(target))
+                             str(target.resolve()))
 
     def test_cancel_waiting_for_export(self):
         with tempfile.TemporaryDirectory() as temp:
