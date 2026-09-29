@@ -368,6 +368,24 @@ class DesktopBridge:
         folder.mkdir(parents=True, exist_ok=True)
         return {"ok": open_path(folder)}
 
+    def start_web(self):
+        """Open the local browser UI while sharing this window's Core state."""
+        from ..web.server import start_server
+
+        with self._lock:
+            server = getattr(self, "_web_server", None)
+            if server is None:
+                try:
+                    server, _thread = start_server(self._root, bridge=self)
+                    self._web_server = server
+                except Exception:
+                    logging.exception("local web startup failed")
+                    return {"ok": False, "message": "无法启动本地网页版，请查看日志。"}
+            else:
+                import webbrowser
+                webbrowser.open(server.origin)
+        return {"ok": True}
+
     def set_theme(self, theme):
         if theme not in {"dark", "light"}:
             return {"ok": False}

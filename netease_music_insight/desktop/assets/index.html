@@ -61,7 +61,7 @@
     .hero h1 span { color: var(--accent); }
     .hero-actions { margin-top: 34px; display: flex; gap: 15px; align-items: center; }
     .small-note { color: var(--soft); font-size: 12px; }
-    .btn { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 11px; padding: 12px 18px; font-weight: 650; min-height: 45px; transition: transform .16s, background .16s; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 11px; padding: 12px 18px; font-weight: 650; min-height: 45px; transition: transform .16s, background .16s; }
     .btn:hover:not(:disabled) { transform: translateY(-1px); background: var(--surface-strong); }
     .btn.primary { border-color: transparent; background: var(--accent); color: var(--button-text); padding: 13px 24px; }
     .btn.primary:hover:not(:disabled) { background: #c4b8ff; }
@@ -178,6 +178,28 @@
     .toast { padding: 11px 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 12px; margin-bottom: 19px; }
     @media (max-width: 1080px) { .main { padding: 0 32px 35px; } .sidebar { width: 204px; flex-basis: 204px; } .hero { gap: 4px; } .vinyl-halo { min-width: 245px; } .card { padding: 20px; } .topic-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
     @media (max-width: 900px) { .main { padding: 0 25px 30px; } .cards { gap: 9px; } .platform-card { padding: 17px; } .metric-grid { gap: 8px; } .metric { padding: 17px 12px; } .insight-grid { grid-template-columns: 1fr; } .route-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) {
+      .web-mode body { height: auto; overflow: auto; }
+      .web-mode .shell { display: block; min-width: 0; height: auto; }
+      .web-mode .sidebar { width: 100%; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .web-mode .section-label, .web-mode .side-bottom { display: none; }
+      .web-mode .brand { padding: 0 0 12px; }
+      .web-mode .nav { display: flex; gap: 4px; overflow-x: auto; }
+      .web-mode .nav button { width: auto; flex: 0 0 auto; padding: 9px; font-size: 12px; }
+      .web-mode .main { overflow: visible; padding: 0 18px 35px; }
+      .web-mode .topline { height: 60px; }
+      .web-mode .top-status { display: none; }
+      .web-mode .hero { min-height: 420px; display: block; padding-top: 40px; }
+      .web-mode .vinyl-wrap { display: none; }
+      .web-mode .cards, .web-mode .metric-grid, .web-mode .topic-grid,
+      .web-mode .feature-grid { grid-template-columns: 1fr; }
+      .web-mode .platform-card { min-height: 0; }
+      .web-mode .flow-panel, .web-mode .topic-detail { max-width: 100%; }
+      .web-mode .file-row { flex-wrap: wrap; }
+      .web-mode .field-line { flex-wrap: wrap; }
+      .web-mode .field-line input { flex-basis: 100%; }
+      .web-mode h2 { font-size: 28px; }
+    }
   </style>
 </head>
 <body>
@@ -198,6 +220,18 @@
     'use strict';
     let state = null, revision = -1, bridgeReady = false, polling = false;
     let activeTopic = null, copied = false, lastFolder = null, searchTimer = null;
+    const isWeb = Boolean(window.musicInsightWeb);
+    if (isWeb) document.documentElement.classList.add('web-mode');
+    async function callCore(name, ...args) {
+      if (!isWeb) return window.pywebview.api[name](...args);
+      const response = await fetch('/api/call', {
+        method:'POST', credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-Music-Insight-CSRF':window.musicInsightWeb.csrf},
+        body:JSON.stringify({method:name,args})
+      });
+      if (!response.ok) throw new Error('Local Web request failed');
+      return response.json();
+    }
     const content = document.getElementById('content');
     const nav = document.getElementById('nav');
     const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -207,7 +241,7 @@
     function header(kicker, title, detail='') { return `<div class="page-header"><div class="eyebrow">${kicker}</div><h2>${title}</h2>${detail ? `<p>${detail}</p>` : ''}</div>`; }
     function toast() { return state.toast ? `<div class="toast">${esc(state.toast)}</div>` : ''; }
     function home() { return `${toast()}<div class="hero"><div><div class="eyebrow">A SPACE FOR YOUR MUSIC</div><h1>听见<span>自己。</span></h1><p class="lead">整理你的音乐数据，<br>看见属于自己的音乐世界。</p><div class="hero-actions">${button('开始探索　→','explore','primary')}<span class="small-note">只需选择平台，然后扫码</span></div></div><div class="vinyl-wrap"><div class="vinyl-halo"><div class="vinyl"><div class="vinyl-center"></div></div></div></div></div><div class="hero-foot">LISTEN. &nbsp;&nbsp; UNDERSTAND. &nbsp;&nbsp; DISCOVER.</div>`; }
-    function platforms() { return `${toast()}${header('CONNECT YOUR MUSIC','选择你的音乐平台','每一步都有引导。你的音乐数据默认只保存在这台电脑上。')}<div class="cards"><section class="card platform-card"><div class="platform-icon net">♪</div><h3>网易云音乐</h3><p>喜欢歌曲<br>创建和收藏的歌单<br>可获取的播放记录</p>${button('连接网易云　→','start-netease','primary')}</section><section class="card platform-card"><div class="platform-icon qq">♫</div><h3>QQ 音乐</h3><p>我喜欢<br>创建与收藏歌单<br>可获取的音乐数据</p>${button('连接 QQ 音乐　→','start-qq','primary')}</section><section class="card platform-card"><div class="platform-icon all">∞</div><h3>两个平台</h3><p>同时整理两个平台的数据，<br>形成联合音乐画像。</p>${button('联合分析　→','start-all','primary')}</section></div><div class="privacy">只读取你授权的账号数据。不下载歌曲，也不把音乐数据上传到作者服务器。</div>`; }
+    function platforms() { return `${toast()}${header('CONNECT YOUR MUSIC','选择你的音乐平台','每一步都有引导。你的音乐数据默认只保存在这台电脑上。')}<div class="cards"><section class="card platform-card"><div class="platform-icon net">♪</div><h3>网易云音乐</h3><p>喜欢歌曲<br>创建和收藏的歌单<br>可获取的播放记录</p>${button('连接网易云　→','start-netease','primary')}</section><section class="card platform-card"><div class="platform-icon qq">♫</div><h3>QQ 音乐</h3><p>我喜欢<br>创建与收藏歌单<br>可获取的音乐数据</p>${button('连接 QQ 音乐　→','start-qq','primary')}</section><section class="card platform-card"><div class="platform-icon all">∞</div><h3>两个平台</h3><p>同时整理两个平台的数据，<br>形成联合音乐画像。</p>${button('联合分析　→','start-all','primary')}</section></div><div class="privacy">只读取你授权的账号数据。不下载歌曲，也不把音乐数据上传到作者服务器。</div>${isWeb?'<p class="small-note">建议在电脑打开 Music Insight Web，再使用手机扫码登录。</p>':''}`; }
     function login() { const expired = state.login_status === '二维码已过期'; return `${toast()}<div class="flow-panel">${header('CONNECT ACCOUNT',`连接${esc(state.provider_name || '音乐平台')}`,'二维码会直接显示在这里。请用对应音乐 App 扫描，并在手机上确认。')}<div class="qr-frame">${state.qr ? '<img id="qr-image" alt="登录二维码">' : '<div class="qr-placeholder">正在准备<br>登录二维码</div>'}</div><div class="status-pill">${esc(state.login_status)}</div><p style="margin:17px 0 0">${esc(state.message || `请使用${state.provider_name || '对应音乐'} App 扫描`)}</p><div class="flow-actions">${expired ? button('重新生成二维码','refresh','primary') : ''}${button('取消连接','cancel','ghost')}</div></div>`; }
     function connected() { const first = Array.from(state.nickname || '音').slice(0,1).join(''); return `${toast()}<div class="flow-panel">${header('CONNECTED','已经连接好了','现在可以开始整理你的音乐世界。')}<div class="mono-avatar">${esc(first)}</div><div class="connected-check">✓ 已连接</div><h2 style="font-size:29px">${esc(state.nickname)}</h2><p>${esc(state.provider_name)}</p><div class="flow-actions">${button('开始整理我的音乐　→','begin','primary')}${button('取消','cancel','ghost')}</div></div>`; }
     function progress() { const p=state.progress, ratio=p.tracks_total ? Math.max(0,Math.min(100,Math.round(p.tracks_current/p.tracks_total*100))) : 0; const value=(v,suffix='')=>v===null||v===undefined?'等待中':`✓ ${v}${suffix}`; return `${toast()}${header('ORGANIZING','正在整理你的音乐世界…',esc(state.message || p.phase || '你可以继续使用电脑，窗口会保持响应。'))}<section class="card progress-card"><div class="progress-row"><span>用户资料</span><span class="progress-value done">✓ 已读取</span></div><div class="progress-row"><span>喜欢歌曲</span><span class="progress-value ${p.liked!==null?'done':''}">${value(p.liked,' 首')}</span></div><div class="progress-row"><span>歌单</span><span class="progress-value ${p.playlists!==null?'done':''}">${value(p.playlists,' 个')}</span></div><div class="progress-row"><span>歌单歌曲</span><span class="progress-value">${p.tracks_total?`${p.tracks_current} / ${p.tracks_total} · ${ratio}%`:'等待中'}</span><div class="bar-track" role="progressbar" aria-valuenow="${ratio}" aria-valuemin="0" aria-valuemax="100"><div class="bar-fill" style="width:${ratio}%"></div></div></div><div class="progress-row"><span>播放记录</span><span class="progress-value ${p.history!==null?'done':''}">${state.provider==='qq'?'平台暂不提供':value(p.history,' 条')}</span></div></section><div style="text-align:center;margin-top:25px">${button('取消整理','cancel','ghost')}</div>`; }
@@ -235,7 +269,7 @@
       if (activeTopic) {
         const t = activeTopic;
         const scope = t.scope.split(/[、；]/).map(part=>part.trim()).filter(Boolean).map(part=>`<span>${esc(part)}</span>`).join('');
-        return `<div class="topic-detail"><button class="topic-back" data-action="ai-back">← 返回分析方向</button><div class="eyebrow">ANALYSIS ${String(t.number).padStart(2,'0')}</div><h2>${esc(t.title)}</h2><p class="lead">${esc(t.question)}</p>${t.reason?`<div class="toast">${esc(t.reason)}</div>`:''}<div class="section-head"><h3>AI 会分析</h3><p>具体结论由你选择的 AI 根据上传文件给出。</p></div><div class="scope-list">${scope}</div><div class="section-head"><h3>完整 Prompt</h3><p>这段文字可以独立使用，已包含数据范围与缺失说明。</p></div><textarea id="prompt-text" class="prompt-box" readonly aria-label="完整 AI Prompt">${esc(t.prompt)}</textarea><div class="copy-line">${button('复制 Prompt','copy-prompt','primary')}${button('打开数据文件夹','open-folder','small')}<span class="copy-ok" role="status">${copied?'✓ 已复制':''}</span></div><section class="card"><h3>怎么使用？</h3><ol class="steps"><li>打开 ChatGPT、Claude、Gemini，或其他支持文件上传的 AI。</li><li>上传 <strong>${esc(t.filename)}</strong>。</li><li>点击“复制 Prompt”。</li><li>把 Prompt 粘贴给 AI。</li><li>开始分析，并让 AI 指出对应的歌曲或歌单证据。</li></ol><p class="small-note">上传前，请确认你愿意把个人音乐数据交给所选 AI 服务。</p></section></div>`;
+        return `<div class="topic-detail"><button class="topic-back" data-action="ai-back">← 返回分析方向</button><div class="eyebrow">ANALYSIS ${String(t.number).padStart(2,'0')}</div><h2>${esc(t.title)}</h2><p class="lead">${esc(t.question)}</p>${t.reason?`<div class="toast">${esc(t.reason)}</div>`:''}<div class="section-head"><h3>AI 会分析</h3><p>具体结论由你选择的 AI 根据上传文件给出。</p></div><div class="scope-list">${scope}</div><div class="section-head"><h3>完整 Prompt</h3><p>这段文字可以独立使用，已包含数据范围与缺失说明。</p></div><textarea id="prompt-text" class="prompt-box" readonly aria-label="完整 AI Prompt">${esc(t.prompt)}</textarea><div class="copy-line">${button('复制 Prompt','copy-prompt','primary')}${isWeb?`<a class="btn small" href="/download/${encodeURIComponent(t.filename)}">下载数据文件</a>`:button('打开数据文件夹','open-folder','small')}<span class="copy-ok" role="status">${copied?'✓ 已复制':''}</span></div><section class="card"><h3>怎么使用？</h3><ol class="steps"><li>打开 ChatGPT、Claude、Gemini，或其他支持文件上传的 AI。</li><li>上传 <strong>${esc(t.filename)}</strong>。</li><li>点击“复制 Prompt”。</li><li>把 Prompt 粘贴给 AI。</li><li>开始分析，并让 AI 指出对应的歌曲或歌单证据。</li></ol><p class="small-note">上传前，请确认你愿意把个人音乐数据交给所选 AI 服务。</p></section></div>`;
       }
       const routes = [
         ['第一次使用','全景画像 → 真实音乐审美 → 核心歌手 → 音乐地图 → 系统听歌计划'],
@@ -246,10 +280,10 @@
       return `${toast()}${header('AI ANALYSIS','探索你的音乐世界','请选择你感兴趣的方向。每个 Prompt 都能独立复制使用。')}<div class="route-grid">${routes.map(([title,description])=>`<div class="route-card"><h3>${title}</h3><p>${description}</p></div>`).join('')}</div><div class="section-head"><h3>分析方向</h3><p>Music Insight 负责整理数据和 Prompt；你自行选择 AI，无需 API Key。</p></div><div class="topic-grid">${cards}</div>`;
     }
     function exportPage() {
-      const rows=state.files.map((f,i)=>`<div class="file-row"><div class="file-glyph">${i===0?'AI':'MD'}</div><div><strong>${esc(f.name)}</strong><small>${esc(f.description)}</small></div></div>`).join('');
+      const rows=state.files.map((f,i)=>`<div class="file-row"><div class="file-glyph">${i===0?'AI':'MD'}</div><div><strong>${esc(f.name)}</strong><small>${esc(f.description)}</small></div>${isWeb?`<a class="btn small" href="/download/${encodeURIComponent(f.name)}">下载</a>`:''}</div>`).join('');
       return `${toast()}${header('YOUR FILES','导出 AI 数据','文件只保存在你选择的本地文件夹中。你也可以直接在“AI 分析”中查看并复制 Prompt。')}${state.files.length ? `<div class="file-list">${rows}</div><p class="small-note">${esc(state.result_folder)}</p>${button('打开数据文件夹','open-folder','primary')}` : `<div class="card empty"><p>还没有导出文件。完成一次音乐整理后，这里会显示文件清单。</p>${button('选择音乐平台','explore','primary')}</div>`}`;
     }
-    function settings() { const s=state.settings; return `${toast()}${header('PREFERENCES','设置','让 Music Insight 按你喜欢的方式工作。')}<div class="settings-list"><section class="settings-row"><h3>输出位置</h3><p>导出的数据、摘要和 AI 指南会保存在这个文件夹。</p><div class="field-line"><input id="output-path" aria-label="输出路径" value="${esc(s.output_dir)}"><button class="btn small" data-action="choose-folder">选择</button><button class="btn small primary" data-action="save-folder">保存</button></div></section><section class="settings-row"><h3>外观主题</h3><p>选择阅读更舒适的界面颜色。</p><div class="option-row"><button class="btn small ${s.theme==='dark'?'active':''}" data-action="theme-dark">深色</button><button class="btn small ${s.theme==='light'?'active':''}" data-action="theme-light">浅色</button></div></section><section class="settings-row"><h3>数据与维护</h3><p>缓存只帮助下次继续获取；清除后会在下次重新读取。日志保存技术错误详情。</p><div class="option-row">${button('清除缓存','clear-cache','small')}${button('重新获取数据','fresh','small')}${button('打开日志目录','open-logs','small')}</div></section></div>`; }
+    function settings() { const s=state.settings; return `${toast()}${header('PREFERENCES','设置 / 隐私','账号和音乐数据默认只保存在这台电脑。Local Web 只监听 127.0.0.1，不连接作者服务器。')}<div class="settings-list"><section class="settings-row"><h3>输出位置</h3><p>导出的数据、摘要和 AI 指南会保存在这个文件夹。</p><div class="field-line"><input id="output-path" aria-label="输出路径" value="${esc(s.output_dir)}">${isWeb?'':'<button class="btn small" data-action="choose-folder">选择</button>'}<button class="btn small primary" data-action="save-folder">保存</button></div></section><section class="settings-row"><h3>外观主题</h3><p>选择阅读更舒适的界面颜色。</p><div class="option-row"><button class="btn small ${s.theme==='dark'?'active':''}" data-action="theme-dark">深色</button><button class="btn small ${s.theme==='light'?'active':''}" data-action="theme-light">浅色</button></div></section><section class="settings-row"><h3>数据与维护</h3><p>缓存只帮助下次继续获取；清除后会在下次重新读取。日志保存技术错误详情。</p><div class="option-row">${button('清除缓存','clear-cache','small')}${button('重新获取数据','fresh','small')}${button('打开日志目录','open-logs','small')}</div></section>${isWeb?'':`<section class="settings-row"><h3>Local Web</h3><p>在系统默认浏览器打开网页版，与当前桌面客户端共用本机数据。</p>${button('启动 Web 版','start-web','small')}</section>`}</div>`; }
     function errorPage() { const e=state.error || {title:'遇到问题',body:'请稍后重试。',detail:''}; return `${header('SOMETHING HAPPENED',esc(e.title),'整理没有完成；已有缓存仍在本机。')}<div class="flow-panel"><div class="error-accent">!</div><p>${esc(e.body)}</p><div class="flow-actions">${button('重试','retry','primary')}${button('返回选择','explore','ghost')}</div><details><summary>查看详细信息</summary><pre>${esc(e.detail)}</pre></details></div>`; }
     const pages = {home,platforms,login,connected,progress,music,ai,export:exportPage,settings,error:errorPage};
     function render() {
@@ -266,14 +300,14 @@
       if(!bridgeReady || polling) return;
       polling=true;
       try {
-        const update=await window.pywebview.api.snapshot(revision);
+        const update=await callCore('snapshot',revision);
         if(update.state) { revision=update.revision; state=update.state; render(); }
       } catch(error) { document.getElementById('crumb').textContent='MUSIC INSIGHT / 连接中'; }
       finally { polling=false; }
     }
     async function invoke(name,...args) {
       try {
-        const result=await window.pywebview.api[name](...args);
+        const result=await callCore(name,...args);
         if(result && result.ok===false && !result.cancelled && result.message) alert(result.message);
         await poll();
         return result;
@@ -299,6 +333,7 @@
       else if(action==='retry') invoke('start',state.selected);
       else if(action==='open-folder') invoke('open_result_folder');
       else if(action==='open-logs') invoke('open_logs');
+      else if(action==='start-web') invoke('start_web');
       else if(action==='theme-dark'||action==='theme-light') invoke('set_theme',action.slice(6));
       else if(action==='save-folder') invoke('set_output_dir',document.getElementById('output-path').value);
       else if(action==='choose-folder') invoke('choose_output_dir');
@@ -306,8 +341,13 @@
       else if(action==='clear-cache') { if(confirm('清除近期缓存？已导出的文件不会删除。')) invoke('clear_cache'); }
       else if(action==='ai-back') { activeTopic=null; copied=false; render(); }
       else if(action==='copy-prompt' && activeTopic) {
-        const result=await invoke('copy_prompt',activeTopic.number);
-        if(result && result.ok) { copied=true; render(); }
+        if(isWeb) {
+          try { await navigator.clipboard.writeText(activeTopic.prompt); copied=true; render(); }
+          catch(error) { alert('复制失败，请手动选择上方文字。'); }
+        } else {
+          const result=await invoke('copy_prompt',activeTopic.number);
+          if(result && result.ok) { copied=true; render(); }
+        }
       }
     });
     document.addEventListener('change',event=>{
@@ -323,7 +363,7 @@
       if(!query) { holder.innerHTML=''; return; }
       searchTimer=setTimeout(async()=>{
         try {
-          const result=await window.pywebview.api.search_catalog(query);
+          const result=await callCore('search_catalog',query);
           if(!holder.isConnected || input.value.trim()!==query) return;
           const rows=result.results || [];
           holder.innerHTML=rows.length ? rows.map(row=>`<div class="search-row"><span>${esc(row.name)}</span><span>${esc(row.artists)}${row.album?' · '+esc(row.album):''}</span></div>`).join('') : '<p class="small-note">没有找到匹配的本地歌曲。</p>';
@@ -331,6 +371,7 @@
       },180);
     });
     window.addEventListener('pywebviewready',()=>{ bridgeReady=true; poll(); setInterval(poll,350); });
+    if(isWeb) { bridgeReady=true; poll(); setInterval(poll,500); }
   </script>
 </body>
 </html>
