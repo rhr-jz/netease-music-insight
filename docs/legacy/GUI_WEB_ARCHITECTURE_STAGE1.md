@@ -1,5 +1,7 @@
 # GUI / Local Web 架构准备（第 1 阶段）
 
+> 历史记录：本文保留第 1 阶段的选型与计划，其中“Web 尚未实现”和 FastAPI 方案已过时。当前实现见 [项目架构](../ARCHITECTURE.md)。
+
 第 1 阶段保留现有 `netease_music_insight/` 包与 JSON 格式，不迁移到 `src/`。第 2 阶段已加入 pywebview 桌面界面；独立网页端仍未实现。
 
 ## 现有链路与解耦
@@ -54,4 +56,4 @@ flowchart LR
 
 ## 桌面实现
 
-`run_desktop.py` 启动 `desktop/app.py`，窗口通过 pywebview 的本机 JS API 访问 `desktop/bridge.py`。Bridge 以后台线程调用同一个 `MusicInsightService`，把扫码图片读为内存中的 Data URL，按事件更新连接、进度和结果页面；数据文件仍由原 Provider、报告和指南模块生成。窗口关闭及“取消”按钮使用同一个协作取消令牌。第 3 阶段的 `desktop/library.py` 从既有 JSON 恢复本地 Dashboard、历史来源和 AI 分析卡片；Prompt 始终由共享 `guidance.py` 生成，复制使用 Windows 原生 Unicode 剪贴板。WebView2 Runtime 是 Windows 运行依赖；不需要本地 HTTP 端口。Web 端留待后续阶段。数据格式详见[数据格式](DATA_FORMAT.md)。
+`run_desktop.py` 启动 `desktop/app.py`，窗口通过 pywebview 的本机 JS API 访问 `desktop/bridge.py`。Bridge 以后台线程调用同一个 `MusicInsightService`，把扫码图片读为内存中的 Data URL，按事件更新连接、进度和结果页面；数据文件仍由原 Provider、报告和指南模块生成。窗口关闭及“取消”按钮使用同一个协作取消令牌。第 3 阶段的 `desktop/library.py` 从既有 JSON 恢复本地 Dashboard、历史来源和 AI 分析卡片；Prompt 始终由共享 `guidance.py` 生成，复制使用 Windows 原生 Unicode 剪贴板。WebView2 Runtime 是 Windows 运行依赖；不需要本地 HTTP 端口。Web 端留待后续阶段。数据格式详见[数据格式](../DATA_FORMAT.md)。

@@ -1,111 +1,117 @@
 # 🎧 Music Insight
 
-双击、扫码、等待导出，再从分析指南中挑一个感兴趣的问题。无需了解 Python、数据格式或提示词写法。
+## 听见自己。
 
-## 导出之后能做什么？
+**网易云音乐 / QQ 音乐个人音乐数据与 AI 音乐审美探索工具。**
 
-了解自己的音乐审美、找到真正喜欢的歌手、发现可能喜欢的新音乐、建立音乐地图、整理歌单、准备和同龄人聊音乐的话题，或制定轻松的八周听歌计划。导出结果按主题提供独立提示词；你只需上传文件并复制其中一段。
+一键整理两个平台的个人听歌数据，通过可视化和模块化 AI Prompt，帮助你理解自己的音乐习惯与音乐审美。
+
+[下载 Windows 版](https://github.com/rhr-jz/netease-music-insight/releases) · [快速开始](docs/QUICK_START.md) · [常见问题](docs/FAQ.md) · [English](README_EN.md)
+
+## 界面截图
+
+以下均为**合成演示数据**。登录图中的图案不是有效登录二维码，截图不包含真实账号、歌单或凭据。
+
+| 首页 | 连接音乐平台 |
+| --- | --- |
+| ![Music Insight 首页](assets/screenshots/home.png) | ![选择网易云音乐或 QQ 音乐](assets/screenshots/platforms.png) |
+
+| 应用内扫码 | 我的音乐 Dashboard |
+| --- | --- |
+| ![演示二维码登录界面](assets/screenshots/qr-login.png) | ![合成数据的音乐 Dashboard](assets/screenshots/dashboard.png) |
+
+![AI 分析中心，展示多个分析方向](assets/screenshots/ai-center.png)
+
+## 它能做什么
+
+- **连接网易云音乐、QQ 音乐或两个平台**：在应用内扫码，整理喜欢歌曲、自建与收藏歌单、可访问的歌单歌曲。网易云还会尝试读取平台当前提供的播放记录。
+- **查看音乐事实**：Dashboard 展示喜欢歌曲、去重歌曲、歌手、歌单、常出现歌手与专辑、数据来源和更新时间；本地搜索歌曲、歌手与专辑。
+- **探索 AI 分析**：按主题查看完整 Prompt，一键复制，再把导出的数据交给你选择的 AI。两个平台的数据会增加跨平台分析。
+- **导出可复用文件**：生成 `music_for_ai.json`、`music_summary.md`、`AI_ANALYSIS_GUIDE.md` 和独立的 `prompts/`。联合数据使用 `music_for_ai_combined.json`。
+- **离线浏览历史结果**：已有导出可在断网时查看、搜索和复制 Prompt；重新同步音乐平台需要网络。
+
+项目最初只支持网易云音乐，因此仓库名仍是 `netease-music-insight`；现在产品名称统一为 **Music Insight**，并支持 QQ 音乐与联合分析。
+
+## Windows 快速开始
+
+1. 从 [GitHub Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载带桌面界面的 `MusicInsight-Windows-Portable.zip`，**完整解压**。
+2. 双击文件夹中的 `MusicInsight.exe`。
+3. 选择网易云音乐、QQ 音乐或“两个平台”。
+4. 用对应的音乐 App 扫描应用内二维码，并在手机确认。
+5. 点击“开始整理我的音乐”，随后在“我的音乐”和“AI 分析”中探索。
+
+Windows 10/11 需要 Microsoft Edge WebView2 Runtime。首次整理网易云音乐时，程序可能需要联网准备本地接口组件；请保留解压后的整个目录，不要单独移动 EXE。各 Release 的实际功能以对应版本说明为准。[下载被拦截时的处理方法](SECURITY.md)。
+
+## Local Web
+
+**Music Insight Web 是运行在你电脑上的 Local Web，不是云端 SaaS。** 网页由本机 Python 后端提供，默认只监听 `127.0.0.1` 的随机空闲端口；程序启动后自动打开系统默认浏览器。音乐数据不会默认上传到作者服务器，其他局域网设备也不能直接访问这个地址。
+
+- 在包含该功能的桌面版中，打开“设置” → “启动 Web 版”。
+- 源码用户可运行 `python run_web.py`；浏览器会自动打开。
+- Web 与 Desktop 共用同一套登录、导出、Dashboard 和 Prompt 逻辑。网页版可直接下载当前导出的 JSON、摘要与指南。
+
+Local Web 在窄屏浏览器也可阅读，但由于服务只绑定本机，**手机无法直接通过局域网访问电脑上的网页**。请在电脑上打开页面，用手机扫描电脑屏幕中的二维码。[架构与安全边界](docs/ARCHITECTURE.md)。
+
+## AI 分析中心
+
+可选择：音乐全景画像、真实音乐审美、核心歌手、听歌习惯、音乐成长轨迹、我的音乐地图、审美盲区、同龄人音乐谈资、系统听歌计划、歌单整理、情绪与音乐、年度音乐总结；有两个平台数据时还可进行跨平台比较。
+
+**无需 OpenAI、Claude 或 Gemini API Key。** 使用方式：
 
 ```text
-网易云音乐 / QQ 音乐
-        ↓ 扫码
-  Music Insight 整理数据
-        ↓
-music_for_ai.json（两个平台时也有 music_for_ai_combined.json）
-        ↓ 上传并选择一个问题
-ChatGPT / Claude / Gemini / 其他支持文件上传的 AI
-        ↓
-个人音乐画像与探索建议
+Music Insight 整理数据 → 选择分析方向 → 复制 Prompt
+                                 ↓
+       自行把数据文件和 Prompt 交给 ChatGPT / Claude / Gemini 等 AI
 ```
 
-## 它能做什么？
+每个 Prompt 可独立使用，并会说明缺失的数据。QQ 音乐没有可靠的完整播放历史时，不会把“历史缺失”误写成“没有重复听歌”。[了解分析方向与数据边界](docs/AI_ANALYSIS.md)。
 
-- 扫码导出喜欢的歌曲、自建与收藏的歌单、歌单歌曲；网易云还会尝试获取服务端可返回的播放记录。
-- 选择两个平台时生成联合报告，仅自动合并高置信的同一首录音。
-- 保留接口实际提供的歌曲收藏时间、歌单创建时间与 QQ 收藏歌单排序时间；缺失的时间标记未知。
-- 自动生成 `music_for_ai.json`、易读概要、分领域 AI 指南和可单独复制的提示词。
-- Windows 桌面端会自动恢复本地导出记录；断网后仍能查看 Dashboard、切换历史来源、搜索歌曲和复制 Prompt。重新同步平台数据时才需要网络。
-- 歌单有无权限或下架内容时继续导出，并标出缺失范围。
-- 数据只保存在你的电脑中；程序不要求密码，也不上传数据到作者服务器。
+## 数据与隐私
 
-## 🚀 最快使用方法
+> 🔒 **Privacy First：你的音乐数据默认只保存在本地。**
 
-### Windows 10 / 11：下载目录版
+Music Insight 不获取账号密码，不把 Cookie 上传到作者服务器，不默认上传个人歌单，不下载版权音乐，不绕过 VIP 或破解付费内容。扫码后与音乐平台通信是获取你授权数据所必需的；**只有你主动把导出文件上传给所选 AI，AI 服务才会收到这些数据**。
 
-1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载包含桌面界面的新版 `MusicInsight-Windows-Portable.zip`，完整解压后双击 `MusicInsight.exe`。需要 Windows 10/11 和 Microsoft Edge WebView2 Runtime；首次使用网易云时需要联网准备本地接口组件。
-2. 在界面中选择平台，使用相应手机 App 扫描程序内显示的二维码并确认，再点“开始整理我的音乐”。
-3. 在“我的音乐”查看事实统计、常见歌手与专辑，也可以搜索本地歌曲。进入“AI 分析”选择方向、阅读完整 Prompt 并一键复制；“导出”页列出要上传的 JSON 并能打开数据文件夹。两个平台时上传 `music_for_ai_combined.json`。旧版 Release 仍是命令行界面。
+播放记录与收藏时间以平台实际返回为准。网易云返回的播放记录可能只覆盖有限范围；QQ 音乐完整播放历史当前不可用。缺失或无法访问的内容会在导出中标记。[完整隐私说明](PRIVACY.md) · [数据格式](docs/DATA_FORMAT.md)。
 
-### Windows 10 / 11：源码运行
+## 常见问题
 
-1. 安装 [Python 3.10+](https://www.python.org/downloads/windows/)（安装时勾选 **Add Python to PATH**），下载本仓库 ZIP 并解压。
-2. 双击 `一键运行.bat`。首次启动会自动安装 Python 依赖；仅网易云需要准备本地 Node.js 和接口组件。无需安装 Git。
-3. 扫码、等待导出，按窗口提示使用结果。
+- **二维码过期？** 在应用内点击“重新生成”，用对应平台 App 重新扫码。
+- **下载提示风险？** 不要关闭防护或强行运行；核对 Release 来源并阅读[下载与安全说明](SECURITY.md)。
+- **为什么有歌曲、歌单或历史缺失？** 平台接口、权限和下架内容都可能影响范围；详见[常见问题](docs/FAQ.md)。
+- **哪里反馈问题？** 到 [Issues](https://github.com/rhr-jz/netease-music-insight/issues) 描述系统、版本和复现步骤，不要上传 Cookie、UID、二维码或私人导出文件。
 
-### macOS：源码运行
+## 开发者运行方式
 
-1. 安装 [Python 3.10+](https://www.python.org/downloads/macos/)；若要导出网易云音乐，还需安装 [Node.js 18+](https://nodejs.org/)。
-2. 下载本仓库 ZIP 并完整解压，然后双击 `一键运行.command`。首次启动会建立独立 Python 环境并安装依赖；网易云首次使用还会准备本地接口组件。
-3. 选择平台，用对应音乐 App 扫描自动打开的二维码并确认。导出后可在菜单中选择用 Finder 打开结果目录。
-
-如果 macOS 询问是否允许 Terminal 访问下载或文稿目录，请根据文件所在位置允许访问。无需安装 Git，也无需手动查找 Cookie。
-
-### Linux：源码运行
-
-安装 Python 3.10+；导出网易云还需 Node.js 18+。在仓库目录执行：
+需要 Python 3.10+。Windows 桌面源码版依赖 `requirements-desktop.txt`；CLI 与 Local Web 的基础依赖见 `requirements.txt`。网易云导出在 macOS / Linux 上还需要 Node.js 18+。
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python run.py
+python -m pip install -r requirements-desktop.txt
+python run_desktop.py                 # Windows GUI
+python run_web.py                     # Local Web
+python run.py --provider netease      # CLI；也支持 qq / all
+python -m unittest discover -s tests -v
 ```
 
-程序会尝试用系统的 `xdg-open` 打开二维码和结果文件夹；若桌面环境不支持，可按终端提示手动打开二维码图片。
+macOS 源码版可双击 `一键运行.command`；Windows 源码版保留 `一键运行.bat`。自动化与进阶用法见[开发文档](docs/DEVELOPMENT.md)。
+
+## 项目结构
 
 ```text
-Music Insight
-看见属于你的音乐世界
-请选择音乐平台
-  1 网易云音乐   2 QQ 音乐   3 两个平台
-步骤 1 / 4 · 登录账号
-二维码已在新窗口打开。请用对应的音乐 App 扫码。
-步骤 2 / 4 · 获取音乐数据
-步骤 3 / 4 · 整理 AI 数据
-步骤 4 / 4 · 完成
-网易云音乐：数据已准备好
-  music_for_ai.json  ← 上传给 AI 的主要文件
-  AI_ANALYSIS_GUIDE.md  ← 选择一个问题和对应提示词
+netease_music_insight/
+  providers/             网易云与 QQ 音乐数据接口
+  desktop/               桌面 Bridge 与共享页面
+  web/                   仅本机访问的 HTTP 适配层
+  service.py             Desktop / Web / CLI 共用的任务编排
+  guidance.py            共用的 AI Prompt 数据源
+assets/screenshots/       无真实账号信息的产品截图
+docs/                     快速开始、分析、隐私、架构与开发文档
+tests/                    离线测试
+run_desktop.py · run_web.py · run.py
 ```
 
-网易云结果仍位于 `output/用户名_UID/`；QQ 结果位于 `output/qq_music/用户名_UID/`，联合结果位于 `output/combined/`。
+界面与 Core 共用一套业务逻辑，桌面和网页共用同一份 HTML/CSS/JS。[完整架构](docs/ARCHITECTURE.md)。
 
-```text
-music_for_ai.json          上传给 AI 的统一数据
-music_summary.md           给人看的概要与缺失说明
-AI_ANALYSIS_GUIDE.md       按兴趣挑选分析方向与完整提示词
-prompts/                   每个方向单独一个文件
-AI_ANALYSIS_PROMPT.md      兼容旧版的一份综合提示词
-raw/                       基础原始列表，便于核对
-```
+## License
 
-指南按实际数据展示最多 13 个方向：全景画像、真实审美、核心歌手、听歌习惯、成长轨迹、音乐地图、音乐盲区、音乐谈资、系统听歌计划、歌单整理、情绪音乐、年度总结和跨平台对比。缺少可靠时间时隐藏成长轨迹与年度总结；只导出一个平台时不显示跨平台对比。不同方向均可单独复制，不必依次执行。
-
-## 数据边界
-
-**网易云播放历史仅包含服务端当前允许返回的记录，不等于账号完整终身播放历史。QQ 音乐播放历史没有经过验证的可靠接口，目前标记不可用；不会伪造或估算。** 下架歌曲、私密歌单或接口故障可能造成缺口，文件中的 `export_meta.status` 和 `issues` 会标出。真实账号测试未返回逐首 QQ 喜欢时间，因此显示未知。QQ 收藏歌单的 `orderTime` 是收藏排序时间，不保证等于首次收藏日期。
-
-两个平台的个人数据功能依赖非公开接口，可能随平台更新而变化。本项目只读取用户本人有权访问的账户元数据，不绕过付费限制、不下载音乐文件。
-
-本地接口组件来自 [TH911/NeteaseCloudMusicApi](https://github.com/TH911/NeteaseCloudMusicApi)（MIT）。它运行在 `127.0.0.1`，只在导出期间启动。首次启动通常需要下载组件和安装依赖，因此耗时可能超过五分钟；后续运行会直接复用。
-
-QQ 音乐使用 [QQMusicApi 0.7.3](https://github.com/L-1124/QQMusicApi/releases/tag/v0.7.3)（GPL-3.0-or-later）。许可及第三方声明见 [LICENSE](LICENSE) 和 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
-
-## 需要帮助？
-
-- [快速开始](docs/QUICK_START.md) · [数据格式](docs/DATA_FORMAT.md) · [常见问题](docs/FAQ.md) · [隐私说明](PRIVACY.md) · [项目架构](docs/ARCHITECTURE.md)
-- 若浏览器或杀毒软件拦截下载，请阅读[下载与安全说明](SECURITY.md)，不要关闭防护或强行运行。
-- `python run.py --version` 查看版本；`python run.py --provider netease|qq|all` 可免交互选择；`--fresh` 忽略最近 24 小时的缓存。
-- 开发者：`python -m unittest discover -s tests -v` 运行离线测试。
-- Windows 桌面 GUI 源码入口为 `python run_desktop.py`，安装依赖用 `pip install -r requirements-desktop.txt`；CLI 继续使用 `python run.py`。架构与技术选型见[架构准备文档](docs/GUI_WEB_ARCHITECTURE.md)。
-
-本项目为个人数据导出工具，与网易云音乐及其关联公司无官方关系。仅导出自己有权访问的数据。
+本项目按 [GPL-3.0-or-later](LICENSE) 发布。第三方组件与许可见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)；下载安全说明见 [SECURITY.md](SECURITY.md)。本项目与网易云音乐、QQ 音乐及其关联公司无官方关系，仅供整理自己有权访问的账户数据。

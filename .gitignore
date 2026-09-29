@@ -1,6 +1,7 @@
 .venv/
 .runtime/
 .cache/
+cache/
 .state/
 api/
 api_unpack/
@@ -11,15 +12,19 @@ exports/
 cookies/
 .qqmusic/
 credentials/
+tokens/
 *.token
+*.key
 logs/
 *.cookie
 .env
+.env.*
 __pycache__/
 *.py[cod]
 .pytest_cache/
 build/
 dist/
+/screenshots/
 *.spec
 *.exe
 # Private analysis from the original personal workspace
@@ -28,3 +33,5 @@ music_analysis_summary.json
 analyze_music.py
 artist_metrics.py
 music_focus.py
+个人音乐报告.html
+test-temp.txt

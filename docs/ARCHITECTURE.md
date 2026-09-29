@@ -1,34 +1,50 @@
-# 项目架构
+# Music Insight 当前架构
 
-GUI / Local Web 的技术选型、共享 Core 接口、事件及后台任务方案见 [第 1 阶段架构准备](GUI_WEB_ARCHITECTURE.md)。当前正式入口仍为 CLI。
-
-Music Insight 是本地命令行工具。平台数据读取、数据整理、终端交互和系统集成各自集中在一个位置，便于添加新平台或修复系统兼容问题。
+Music Insight 有三个入口：Windows Desktop、Local Web 与 CLI。它们调用同一套 `MusicInsightService`、Provider、数据整理和 Prompt 代码，不复制音乐平台请求。
 
 ```text
-run.py / 双击脚本 / EXE
-        ↓
-cli.py ── ui.py ── platform_utils.py
-  │
-  └─ service.py ── events.py / errors.py
-        ├─ providers/netease.py ── auth.py / bootstrap.py / api.py / exporter.py
-        └─ providers/qqmusic.py
-        ↓
-report.py / combined.py ── guidance.py
-        ↓
-output/ 里的数据、摘要与独立 AI 提示词
+run_desktop.py → pywebview → desktop/assets/index.html → DesktopBridge ┐
+run_web.py     → 127.0.0.1 HTTP → 同一份 index.html → DesktopBridge ├→ MusicInsightService
+run.py         → cli.py ───────────────────────────────────────────────┘
+                                                                  │
+                ┌─────────────────────────────────────────────────┘
+                ▼
+      providers/netease.py · providers/qqmusic.py
+                ↓
+      report.py · combined.py · guidance.py
+                ↓
+      output/ JSON · Markdown · prompts/
 ```
 
-- `cli.py` 负责平台选择、失败重试与结果展示；`service.py` 统一编排登录、单平台和联合导出，不依赖终端。
-- `providers/` 负责登录和读取账号数据，向 Service 返回 `(输出文件夹, 标准化数据)`。QQ 与网易云的接口差异留在各自 Provider 内。
-- `report.py` 生成单平台数据和摘要；`combined.py` 只对高置信的同一录音做跨平台合并；`guidance.py` 根据实际可用字段生成独立分析方向。
-- `ui.py` 把 Core 事件翻译成用户可理解的步骤，负责终端输入和打开文件。`platform_utils.py` 是打开二维码图片与结果文件夹的系统入口：Windows 使用默认程序，macOS 使用 `open`，Linux 使用 `xdg-open`。
-- `bootstrap.py` 仅在网易云导出时启动本机 `127.0.0.1` 接口。Windows 可准备便携 Node.js；macOS / Linux 需要系统安装 Node.js 18+。QQ 导出不依赖 Node.js。
+## Core 与界面
 
-Windows 双击入口是 `一键运行.bat` 或发布包中的 EXE；macOS 源码入口是 `一键运行.command`。两者最终调用同一个 `run.py`，不复制导出逻辑。
+- `service.py` 负责登录、抓取与导出编排；`providers/` 处理平台差异。网易云通过本机 Node 接口访问账号数据，QQ 使用 `qqmusic-api-python`。
+- `report.py` 构造单平台数据和摘要；`combined.py` 只合并高置信度的跨平台同一录音；`guidance.py` 根据真实可用字段生成 AI Prompt。
+- `events.py` 向界面发送扫码、资料、歌单、播放历史、统计和导出事件；`errors.py` 统一核心错误。Core 不依赖终端打印或 GUI。
+- `desktop/bridge.py` 维护线程安全的任务状态。后台 Worker 执行 `MusicInsightService`；界面只读取状态快照，取消由 `CancellationToken` 协作完成。
+- `desktop/library.py` 从已有 JSON 恢复离线 Dashboard、数据来源和 AI 卡片。Desktop 与 Web 使用同一份 `desktop/assets/index.html` 和同一份 `guidance.py`。
+- `cli.py` 与 `ui.py` 保留进阶命令行入口；不影响图形入口。
 
-## 修改与验证
+## Desktop
 
-1. 新增音乐平台时，在 `providers/` 实现登录、读取与标准化，并保留实际的可用能力和时间字段，再接入 Service；CLI 只负责用户交互。
-2. 新增系统集成时，优先扩展 `platform_utils.py`，不要在 Provider 中散落系统命令。
-3. 用 `python -m unittest discover -s tests -v` 运行离线测试；GitHub Actions 在 Windows、macOS 和 Linux 运行同一组测试。macOS / Linux 还检查启动脚本语法。
-4. 本地真实账号数据、Cookie、缓存、日志和 `output/` 不应进入提交。发布包由标签触发的 Windows 工作流构建。
+`run_desktop.py` 启动 pywebview 窗口。Windows 上使用系统 WebView2；窗口内通过 pywebview JS API 调用 Bridge，二维码由 Bridge 读取到内存并作为图片显示。数据获取在后台线程执行，不占用 UI 线程。窗口尺寸与布局在共享页面中维护。
+
+## Local Web
+
+`run_web.py` 启动 `web/server.py`，绑定 `127.0.0.1` 的随机空闲端口，然后自动打开默认浏览器。桌面“设置 → 启动 Web 版”也可启动服务，并与已打开的桌面窗口共享 Bridge 状态。页面通过本地 HTTP 适配层调用 Bridge；Web 不直接请求网易云或 QQ 音乐接口。
+
+安全边界：
+
+- 仅允许精确的 `127.0.0.1:端口` Host；修改状态的请求还要有同源 Origin、会话 Cookie 和 CSRF 标头。
+- 会话 Cookie 为 HttpOnly、SameSite=Strict；页面使用严格的 CSP、禁用缓存和防嵌入标头，不载入第三方脚本。
+- 浏览器只得到展示所需的二维码和状态，不得到平台 Cookie 或 Token；原始异常详情仅写入本机日志。
+- 下载接口只提供当前选中结果中的 JSON、摘要和分析指南；文件名固定，并检查解析后的路径仍在当前结果目录。
+- 不提供远程数据库或作者服务器。由于默认只绑定回环地址，其他设备无法直接访问电脑上的 Local Web。
+
+## 数据与进度
+
+两平台及联合结果仍使用原导出格式，保留收藏和歌单时间的实际可用值；缺失值不推断。成功导出的数据保存在用户指定的 `output/`，阶段缓存放在 `.cache/`。已导出的 Dashboard 与 Prompt 可离线浏览；重新同步音乐平台需要网络。缓存和输出的清理边界见 [隐私说明](../PRIVACY.md)，字段见 [数据格式](DATA_FORMAT.md)。
+
+## 验证与发布
+
+离线测试运行 `python -m unittest discover -s tests -v`，覆盖网易云、QQ、Combined、Desktop Bridge、Web 安全边界和导出。GitHub Actions 在 Windows、macOS、Linux 运行测试；Windows Release 工作流用 PyInstaller 生成目录版 ZIP。开发步骤见 [DEVELOPMENT.md](DEVELOPMENT.md)。最初的 GUI / Web 选型记录保留在 [legacy/](legacy/GUI_WEB_ARCHITECTURE_STAGE1.md)。
