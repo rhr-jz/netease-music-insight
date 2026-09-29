@@ -47,6 +47,8 @@ class ConsoleUI:
         return False
 
     def on_qr_expired(self, provider):
+        if provider == "qq":
+            return True
         return input("按 Enter 刷新二维码，或按 Q 返回平台选择：").strip().lower() != "q"
 
     def progress(self, message):

@@ -31,9 +31,9 @@ ChatGPT / Claude / Gemini / 其他支持文件上传的 AI
 
 ### Windows 10 / 11：下载目录版
 
-1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载 `MusicInsight-Windows-Portable.zip`，完整解压后双击其中的 EXE。首次使用网易云时需要联网准备本地接口组件。
-2. 选择平台，使用相应手机 App 扫描自动打开的二维码并确认。
-3. 等待“数据已准备好”。打开结果文件夹，把 `music_for_ai.json` 上传给支持文件分析的 AI，再从 `AI_ANALYSIS_GUIDE.md` 选择一个问题复制提示词。选两个平台时，优先上传联合结果中的 `music_for_ai_combined.json`。
+1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载包含桌面界面的新版 `MusicInsight-Windows-Portable.zip`，完整解压后双击 `MusicInsight.exe`。需要 Windows 10/11 和 Microsoft Edge WebView2 Runtime；首次使用网易云时需要联网准备本地接口组件。
+2. 在界面中选择平台，使用相应手机 App 扫描程序内显示的二维码并确认，再点“开始整理我的音乐”。
+3. 在“我的音乐”查看概况，在“导出”打开结果文件夹。把 `music_for_ai.json` 上传给支持文件分析的 AI，再从 `AI_ANALYSIS_GUIDE.md` 选择一个问题复制提示词。选两个平台时，优先上传联合结果中的 `music_for_ai_combined.json`。旧版 Release 仍是命令行界面。
 
 ### Windows 10 / 11：源码运行
 
@@ -105,6 +105,6 @@ QQ 音乐使用 [QQMusicApi 0.7.3](https://github.com/L-1124/QQMusicApi/releases
 - 若浏览器或杀毒软件拦截下载，请阅读[下载与安全说明](SECURITY.md)，不要关闭防护或强行运行。
 - `python run.py --version` 查看版本；`python run.py --provider netease|qq|all` 可免交互选择；`--fresh` 忽略最近 24 小时的缓存。
 - 开发者：`python -m unittest discover -s tests -v` 运行离线测试。
-- GUI / Local Web 的共享 Core 架构与技术选型见[架构准备文档](docs/GUI_WEB_ARCHITECTURE.md)；目前正式发布入口仍为 CLI。
+- Windows 桌面 GUI 源码入口为 `python run_desktop.py`，安装依赖用 `pip install -r requirements-desktop.txt`；CLI 继续使用 `python run.py`。架构与技术选型见[架构准备文档](docs/GUI_WEB_ARCHITECTURE.md)。
 
 本项目为个人数据导出工具，与网易云音乐及其关联公司无官方关系。仅导出自己有权访问的数据。

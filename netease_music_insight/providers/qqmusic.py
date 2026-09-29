@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..api import ApiError
+from ..auth import LoginBack
 from ..errors import ExportCancelled
 from ..report import build_data, write_reports
 from ..utils import atomic_json, read_json, safe_name
@@ -92,9 +93,12 @@ class QQMusicProvider(MusicProvider):
                     "playlist_tracks": True, "play_history": False}
 
     def __init__(self, root: Path, *, fresh=False, notify=None, client=None,
-                 present_qr=None, check_cancel=None):
+                 present_qr=None, check_cancel=None, on_qr_expired=None,
+                 output_dir=None):
         self.root, self.fresh, self.notify = root, fresh, notify or (lambda message: None)
+        self.output_dir = Path(output_dir) if output_dir is not None else root / "output"
         self.present_qr = present_qr
+        self.on_qr_expired = on_qr_expired
         self.check_cancel = check_cancel
         if client is None:
             try:
@@ -156,9 +160,11 @@ class QQMusicProvider(MusicProvider):
                         elif result.event == QRCodeLoginEvents.REFUSE:
                             raise ApiError("手机上拒绝了 QQ 登录。")
                         elif result.event == QRCodeLoginEvents.TIMEOUT:
-                            self.notify("二维码已过期，正在刷新……")
+                            self.notify("二维码已过期。")
+                            if self.on_qr_expired is not None and not self.on_qr_expired():
+                                raise LoginBack()
                             break
-            except (ApiError, ExportCancelled):
+            except (ApiError, ExportCancelled, LoginBack):
                 raise
             except Exception as exc:
                 raise ApiError("QQ 扫码登录失败，请检查网络后重试。") from exc
@@ -230,7 +236,7 @@ class QQMusicProvider(MusicProvider):
 
     async def export(self, profile):
         uid = profile["userId"]
-        folder = self.root / "output" / "qq_music" / f"{safe_name(profile['nickname'])}_{safe_name(uid)}"
+        folder = self.output_dir / "qq_music" / f"{safe_name(profile['nickname'])}_{safe_name(uid)}"
         cache = self.root / ".cache" / "qq_music" / safe_name(uid)
         folder.mkdir(parents=True, exist_ok=True)
         cache.mkdir(parents=True, exist_ok=True)

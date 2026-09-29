@@ -1,8 +1,8 @@
 Music Insight 目录版
 
-请先解压整个 ZIP，再双击本文件夹里的 MusicInsight-Windows-Portable.exe。
-选择网易云音乐或 QQ 音乐，按提示扫码确认。首次使用网易云需要联网准备本地接口组件。
+请先解压整个 ZIP，再双击本文件夹里的 MusicInsight.exe。
+在图形界面中选择网易云音乐或 QQ 音乐，用相应 App 扫描程序内的二维码并在手机确认，然后点击“开始整理我的音乐”。首次使用网易云需要联网准备本地接口组件。
 完成后在结果文件夹中，把 music_for_ai.json 上传给常用 AI；打开 AI_ANALYSIS_GUIDE.md，挑一个问题并复制完整提示词。选择两个平台时用 combined 文件夹中的 music_for_ai_combined.json。
-导出数据保存在本文件夹下的 output/，不要只移动 EXE 而丢弃 _internal/。
+导出数据默认保存在本文件夹下的 output/，也可以在设置中更改。不要只移动 EXE 而丢弃 _internal/。本程序需要 Microsoft Edge WebView2 Runtime。
 
 如果安全软件报告威胁，请不要关闭保护或强行运行。请改用 GitHub 源码版，并在 Issue 中提供检测名称（不要附上个人音乐数据或 Cookie）。

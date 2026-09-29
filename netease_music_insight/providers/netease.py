@@ -14,9 +14,11 @@ class NetEaseProvider(MusicProvider):
                     "playlist_tracks": True, "play_history": True}
 
     def __init__(self, base_url, root: Path, *, fresh=False, notify=None,
-                 present_qr=None, on_qr_expired=None, check_cancel=None):
+                 present_qr=None, on_qr_expired=None, check_cancel=None,
+                 output_dir=None):
         self.api = MusicApi(base_url)
         self.root = root
+        self.output_dir = output_dir
         self.fresh = fresh
         self.notify = notify or (lambda message: None)
         self.present_qr = present_qr
@@ -44,7 +46,8 @@ class NetEaseProvider(MusicProvider):
                             check_cancel=self.check_cancel)
 
     def export(self, profile):
-        return ExportService(self.api, self.root, fresh=self.fresh, notify=self.notify).run(profile)
+        return ExportService(self.api, self.root, fresh=self.fresh, notify=self.notify,
+                             output_dir=self.output_dir).run(profile)
 
     def logout(self):
         self.api.cookie = ""

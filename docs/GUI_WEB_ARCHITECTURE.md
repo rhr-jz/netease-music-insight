@@ -1,6 +1,6 @@
 # GUI / Local Web 架构准备（第 1 阶段）
 
-本阶段保留现有 `netease_music_insight/` 包与 JSON 格式，不迁移到 `src/`。正式发布入口仍是 CLI；桌面和网页界面尚未实现。
+第 1 阶段保留现有 `netease_music_insight/` 包与 JSON 格式，不迁移到 `src/`。第 2 阶段已加入 pywebview 桌面界面；独立网页端仍未实现。
 
 ## 现有链路与解耦
 
@@ -40,7 +40,7 @@ flowchart LR
 
 **Tauri + Python sidecar**：网页 UI 可复用，系统 WebView 的中文、高 DPI 与二维码能力也适合；但 Windows 打包需另封装 Python sidecar，并协调 Rust/Tauri 与 Python 的进程和跨系统二进制，当前项目的开发及长期维护成本最高。[Tauri sidecar 文档](https://v2.tauri.app/develop/sidecar/)
 
-最终选择 **pywebview 桌面壳 + Local Web 页面**，两者只共享一套前端和一套 Python Core。本阶段不增加 GUI 依赖或改变现有 CLI 发布包。
+最终选择 **pywebview 桌面壳 + Python Core**。第 2 阶段桌面界面以内联 HTML 加载，不启动 HTTP 服务；Web 端仍属后续阶段。CLI 保留，Windows 发布包改为图形主入口。
 
 ## Local Web 与隐私边界
 
@@ -54,4 +54,4 @@ flowchart LR
 
 ## 下一阶段
 
-新增 `desktop/` 壳与 `web/` 本地服务、共享静态页面。先完成启动、二维码、进度、取消与结果路径的最小闭环，再测 Windows 打包和完整 CLI。Provider、统计、缓存与 Prompt 不复制。现有 `music_for_ai.json`、联合 JSON、摘要和指南格式继续保持兼容，详见[数据格式](DATA_FORMAT.md)。
+`run_desktop.py` 启动 `desktop/app.py`，窗口通过 pywebview 的本机 JS API 访问 `desktop/bridge.py`。Bridge 以后台线程调用同一个 `MusicInsightService`，把扫码图片读为内存中的 Data URL，按事件更新连接、进度和结果页面；数据文件仍由原 Provider、报告和指南模块生成。窗口关闭及“取消”按钮使用同一个协作取消令牌。WebView2 Runtime 是 Windows 运行依赖；不需要本地 HTTP 端口。Web 端与完整 AI 分析中心留待后续阶段。数据格式详见[数据格式](DATA_FORMAT.md)。

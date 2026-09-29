@@ -55,8 +55,9 @@ def _failure(exc, phase):
 
 class MusicInsightService:
     def __init__(self, root: Path, *, fresh=False, emit=None, present_qr=None,
-                 on_qr_expired=None, cancellation=None):
+                 on_qr_expired=None, cancellation=None, output_dir=None):
         self.root = Path(root)
+        self.output_dir = Path(output_dir) if output_dir is not None else self.root / "output"
         self.fresh = fresh
         self.emit = emit or (lambda event: None)
         self.present_qr = present_qr
@@ -87,6 +88,7 @@ class MusicInsightService:
                 with local_api(self.root, notify=lambda msg: self._notice(provider, msg)) as base:
                     client = NetEaseProvider(
                         base, self.root, fresh=self.fresh,
+                        output_dir=self.output_dir,
                         notify=lambda msg: self._notice(provider, msg),
                         present_qr=lambda path, url: self._qr(provider, path, url),
                         on_qr_expired=lambda: self._expired(provider),
@@ -94,7 +96,9 @@ class MusicInsightService:
                     try:
                         profile = client.login()
                         self.emit(MusicEvent("login_success", provider))
-                        self.emit(MusicEvent("profile_done", provider))
+                        self.emit(MusicEvent("profile_done", provider, details={
+                            "nickname": profile.get("nickname") or "网易云用户",
+                            "avatar": profile.get("avatarUrl") or profile.get("avatar") or ""}))
                         phase = "export"
                         self.emit(MusicEvent("export_started", provider))
                         self.cancellation.check()
@@ -124,13 +128,17 @@ class MusicInsightService:
         from .providers.qqmusic import QQMusicProvider
         client = QQMusicProvider(
             self.root, fresh=self.fresh,
+            output_dir=self.output_dir,
             notify=lambda msg: self._notice(provider, msg),
             present_qr=lambda path: self._qr(provider, path),
+            on_qr_expired=lambda: self._expired(provider),
             check_cancel=self.cancellation.check)
         try:
             profile = await client.login()
             self.emit(MusicEvent("login_success", provider))
-            self.emit(MusicEvent("profile_done", provider))
+            self.emit(MusicEvent("profile_done", provider, details={
+                "nickname": profile.get("nickname") or "QQ音乐用户",
+                "avatar": profile.get("avatar") or ""}))
             self.emit(MusicEvent("export_started", provider))
             self.cancellation.check()
             try:
@@ -147,7 +155,7 @@ class MusicInsightService:
         self.cancellation.check()
         self.emit(MusicEvent("export_started", "combined"))
         try:
-            folder = self.root / "output" / "combined"
+            folder = self.output_dir / "combined"
             self.cancellation.check()
             data = build_combined(netease_data, qq_data)
             write_combined(folder, data)

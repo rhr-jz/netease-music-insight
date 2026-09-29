@@ -12,18 +12,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install -r requirements.txt pyinstaller==6.16.0
+      - run: python -m pip install -r requirements-desktop.txt pyinstaller==6.16.0
       - run: python -m unittest discover -s tests -v
-      - run: pyinstaller --onedir --clean --noupx --name MusicInsight-Windows-Portable run.py
-      - run: .\dist\MusicInsight-Windows-Portable\MusicInsight-Windows-Portable.exe --version
+      - run: python run_desktop.py --smoke
+      - run: pyinstaller --onedir --windowed --clean --noupx --name MusicInsight --collect-all webview --collect-all qqmusic_api --add-data "netease_music_insight/desktop/assets/index.html;netease_music_insight/desktop/assets" run_desktop.py
+      - name: Check packaged GUI entry point
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'dist/MusicInsight/MusicInsight.exe').Path
+          foreach ($argument in @('--smoke', '--version')) {
+            $process = Start-Process -FilePath $exe -ArgumentList $argument -PassThru -Wait
+            if ($process.ExitCode -ne 0) { throw "MusicInsight.exe $argument failed with $($process.ExitCode)" }
+          }
       - name: Package and check Windows files
         shell: pwsh
         run: |
-          Copy-Item docs/PORTABLE_START.txt dist/MusicInsight-Windows-Portable/START_HERE.txt
-          Copy-Item LICENSE dist/MusicInsight-Windows-Portable/LICENSE.txt
-          Copy-Item LICENSE_MIT_ORIGINAL dist/MusicInsight-Windows-Portable/LICENSE_MIT_ORIGINAL.txt
-          Copy-Item THIRD_PARTY_LICENSES.md dist/MusicInsight-Windows-Portable/THIRD_PARTY_LICENSES.md
-          Compress-Archive -Path dist/MusicInsight-Windows-Portable -DestinationPath dist/MusicInsight-Windows-Portable.zip
+          Copy-Item docs/PORTABLE_START.txt dist/MusicInsight/START_HERE.txt
+          Copy-Item LICENSE dist/MusicInsight/LICENSE.txt
+          Copy-Item LICENSE_MIT_ORIGINAL dist/MusicInsight/LICENSE_MIT_ORIGINAL.txt
+          Copy-Item THIRD_PARTY_LICENSES.md dist/MusicInsight/THIRD_PARTY_LICENSES.md
+          Compress-Archive -Path dist/MusicInsight -DestinationPath dist/MusicInsight-Windows-Portable.zip
           $scanPath = (Resolve-Path dist).Path
           $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
           if ($defender -and $defender.AntivirusEnabled) {

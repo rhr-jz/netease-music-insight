@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Music Insight</title>
+  <style>
+    :root {
+      font-family: "Segoe UI Variable", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+      color-scheme: dark;
+      --bg: #0d1226; --surface: rgba(23,29,54,.88); --surface-strong: #1b2342;
+      --line: rgba(196,207,245,.13); --text: #f2f4ff; --muted: #aab3d0;
+      --soft: #737f9f; --accent: #ac9cff; --accent-2: #86c5e8;
+      --button-text: #12142a; --ok: #8de4bb; --warn: #ffd28e;
+    }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f3f4fa; --surface: rgba(255,255,255,.9); --surface-strong: #fff;
+      --line: rgba(44,52,91,.13); --text: #202642; --muted: #606b8b;
+      --soft: #77809a; --accent: #6653c8; --accent-2: #287fa6;
+      --button-text: #fff; --ok: #17845f; --warn: #a36612;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body { background: var(--bg); color: var(--text); overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .55; }
+    .ambient { pointer-events: none; position: fixed; inset: 0; overflow: hidden; z-index: 0; }
+    .ambient::before, .ambient::after { content: ""; position: absolute; width: 660px; height: 660px; border-radius: 50%; filter: blur(95px); opacity: .2; }
+    .ambient::before { top: -330px; right: -120px; background: #6549c7; }
+    .ambient::after { bottom: -420px; left: 20%; background: #296795; opacity: .16; }
+    :root[data-theme="light"] .ambient::before { opacity: .12; }
+    :root[data-theme="light"] .ambient::after { opacity: .1; }
+    .shell { position: relative; z-index: 1; display: flex; height: 100%; min-width: 790px; }
+    .sidebar { width: 226px; flex: 0 0 226px; border-right: 1px solid var(--line); padding: 34px 17px 22px; display: flex; flex-direction: column; background: rgba(8,11,27,.23); }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 12px; font-size: 17px; font-weight: 730; letter-spacing: -.4px; white-space: nowrap; }
+    .brand-mark { width: 29px; height: 29px; flex: 0 0 29px; border: 2px solid var(--accent); border-radius: 50%; display: grid; place-items: center; }
+    .brand-mark::after { content: ""; width: 9px; height: 9px; background: var(--accent-2); border-radius: 50%; }
+    .section-label { margin: 48px 14px 13px; color: var(--soft); font-size: 11px; letter-spacing: 2px; }
+    .nav { display: grid; gap: 5px; }
+    .nav button { width: 100%; border: 0; background: transparent; color: var(--muted); padding: 12px 14px; border-radius: 11px; text-align: left; display: flex; align-items: center; gap: 13px; font-size: 14px; }
+    .nav button:hover { color: var(--text); background: rgba(161,178,235,.08); }
+    .nav button.active { background: rgba(164,143,255,.14); color: var(--text); }
+    .nav-icon { display: inline-grid; place-items: center; width: 19px; font-size: 18px; line-height: 1; color: var(--accent); }
+    .side-bottom { margin-top: auto; padding: 0 13px; color: var(--soft); font-size: 12px; line-height: 1.7; }
+    .main { min-width: 0; flex: 1; overflow: auto; padding: 0 52px 50px; }
+    .topline { height: 88px; display: flex; align-items: center; justify-content: space-between; }
+    .crumb { color: var(--muted); font-size: 13px; letter-spacing: 1px; }
+    .top-status { font-size: 12px; color: var(--soft); border: 1px solid var(--line); border-radius: 100px; padding: 8px 12px; white-space: nowrap; }
+    .top-status::before { content: ""; display: inline-block; width: 6px; height: 6px; background: var(--ok); border-radius: 50%; margin-right: 8px; vertical-align: 2px; }
+    .page { max-width: 1150px; margin: 0 auto; }
+    .eyebrow { color: var(--accent-2); font-size: 12px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; margin: 0 0 20px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(47px, 5vw, 75px); letter-spacing: -3.5px; line-height: 1.12; margin-bottom: 24px; font-weight: 720; }
+    h2 { font-size: 35px; letter-spacing: -1.4px; line-height: 1.25; margin-bottom: 14px; }
+    h3 { font-size: 18px; letter-spacing: -.3px; margin-bottom: 10px; }
+    p { color: var(--muted); line-height: 1.85; font-size: 15px; }
+    .lead { font-size: 19px; line-height: 1.85; max-width: 530px; }
+    .hero { min-height: 520px; display: grid; grid-template-columns: minmax(370px, 1fr) minmax(260px, .85fr); align-items: center; gap: 24px; }
+    .hero h1 span { color: var(--accent); }
+    .hero-actions { margin-top: 34px; display: flex; gap: 15px; align-items: center; }
+    .small-note { color: var(--soft); font-size: 12px; }
+    .btn { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 11px; padding: 12px 18px; font-weight: 650; min-height: 45px; transition: transform .16s, background .16s; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); background: var(--surface-strong); }
+    .btn.primary { border-color: transparent; background: var(--accent); color: var(--button-text); padding: 13px 24px; }
+    .btn.primary:hover:not(:disabled) { background: #c4b8ff; }
+    :root[data-theme="light"] .btn.primary:hover:not(:disabled) { background: #5846b7; }
+    .btn.ghost { background: transparent; }
+    .btn.small { min-height: 38px; padding: 8px 12px; font-size: 13px; }
+    .vinyl-wrap { display: grid; place-items: center; min-height: 430px; }
+    .vinyl-halo { width: min(30vw, 380px); aspect-ratio: 1; min-width: 270px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(136,116,245,.13) 0 37%, rgba(103,94,214,.08) 55%, transparent 71%); }
+    .vinyl { width: 80%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(206,204,255,.24); background: repeating-radial-gradient(circle, rgba(158,169,231,.06) 0 1px, transparent 2px 8px), radial-gradient(circle at 30% 20%, #3c4679, #161d3b 55%, #0e152d); box-shadow: 0 25px 70px rgba(8,7,32,.36); }
+    .vinyl-center { width: 32%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #bbaaff, #738ccc); border: 7px solid rgba(17,22,52,.76); }
+    .vinyl-center::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: #1c2446; }
+    .hero-foot { border-top: 1px solid var(--line); padding-top: 22px; color: var(--soft); font-size: 11px; letter-spacing: 2.7px; }
+    .page-header { padding: 26px 0 25px; }
+    .page-header p { max-width: 640px; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 15px; }
+    .card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 25px; }
+    .platform-card { min-height: 305px; display: flex; flex-direction: column; }
+    .platform-icon { width: 47px; height: 47px; border-radius: 14px; margin-bottom: 27px; display: grid; place-items: center; font-size: 24px; font-weight: 700; }
+    .platform-icon.net { background: rgba(235,88,99,.15); color: #ff818a; }
+    .platform-icon.qq { background: rgba(113,183,237,.15); color: #99d4ff; }
+    .platform-icon.all { background: rgba(168,143,245,.17); color: #c9b6ff; }
+    .platform-card h3 { margin-bottom: 8px; }
+    .platform-card p { font-size: 13px; line-height: 1.8; margin-bottom: 20px; }
+    .platform-card .btn { margin-top: auto; width: 100%; }
+    .privacy { margin-top: 25px; color: var(--soft); font-size: 12px; line-height: 1.7; }
+    .flow-panel { width: min(100%, 580px); margin: 12px auto 0; text-align: center; }
+    .flow-panel h2 { margin-bottom: 8px; }
+    .qr-frame { width: 252px; height: 252px; padding: 13px; border-radius: 23px; background: #fff; margin: 25px auto 17px; display: grid; place-items: center; }
+    .qr-frame img { width: 100%; height: 100%; object-fit: contain; image-rendering: auto; }
+    .qr-placeholder { width: 66%; aspect-ratio: 1; border: 2px dashed #b8bfd1; border-radius: 16px; display: grid; place-items: center; color: #8c95ac; font-size: 12px; line-height: 1.7; }
+    .status-pill { display: inline-block; border: 1px solid var(--line); background: var(--surface); padding: 9px 15px; border-radius: 100px; color: var(--text); font-size: 13px; }
+    .status-pill::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); margin-right: 8px; }
+    .flow-actions { margin-top: 25px; display: flex; gap: 10px; justify-content: center; }
+    .mono-avatar { width: 90px; height: 90px; border-radius: 50%; margin: 40px auto 23px; background: linear-gradient(135deg, #8f88d9, #5484a3); display: grid; place-items: center; color: #fff; font-size: 37px; font-weight: 650; }
+    .connected-check { color: var(--ok); font-size: 13px; font-weight: 700; letter-spacing: 2px; margin-bottom: 11px; }
+    .progress-card { max-width: 680px; margin: 14px auto 0; padding: 25px 31px; }
+    .progress-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding: 17px 0; }
+    .progress-row:last-child { border-bottom: 0; }
+    .progress-row span:first-child { color: var(--text); font-size: 14px; }
+    .progress-value { color: var(--muted); font-size: 13px; }
+    .progress-value.done { color: var(--ok); }
+    .bar-track { grid-column: 1 / -1; height: 7px; border-radius: 100px; overflow: hidden; background: rgba(164,174,225,.17); }
+    .bar-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: inherit; transition: width .25s; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin: 27px 0; }
+    .metric { padding: 23px 21px; background: var(--surface); border: 1px solid var(--line); border-radius: 17px; }
+    .metric strong { display: block; font-size: clamp(29px, 3vw, 40px); line-height: 1.1; letter-spacing: -1.7px; margin-bottom: 12px; font-weight: 690; }
+    .metric span { font-size: 12px; color: var(--muted); }
+    .feature-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+    .feature-grid .card { min-height: 170px; }
+    .feature-grid p { font-size: 13px; }
+    .file-list { display: grid; gap: 10px; margin: 28px 0; }
+    .file-row { display: flex; align-items: center; gap: 17px; padding: 18px 19px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
+    .file-glyph { width: 36px; height: 43px; flex: 0 0 36px; background: rgba(167,152,238,.17); border: 1px solid rgba(167,152,238,.28); border-radius: 8px; display: grid; place-items: center; color: var(--accent); font-size: 10px; font-weight: 750; }
+    .file-row strong { font-size: 14px; display: block; margin-bottom: 5px; overflow-wrap: anywhere; }
+    .file-row small { color: var(--muted); font-size: 12px; }
+    .settings-list { max-width: 800px; display: grid; gap: 13px; }
+    .settings-row { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 21px 23px; }
+    .settings-row h3 { font-size: 15px; margin-bottom: 5px; }
+    .settings-row p { font-size: 12px; margin-bottom: 13px; }
+    .field-line { display: flex; gap: 9px; }
+    .field-line input { min-width: 0; flex: 1; border: 1px solid var(--line); border-radius: 9px; background: rgba(0,0,0,.12); color: var(--text); padding: 10px 12px; font-size: 13px; }
+    :root[data-theme="light"] .field-line input { background: #f9f9fd; }
+    .option-row { display: flex; gap: 9px; flex-wrap: wrap; }
+    .option-row .active { border-color: var(--accent); color: var(--accent); }
+    .empty { padding: 42px 28px; text-align: center; }
+    .empty p { max-width: 430px; margin: 0 auto 19px; }
+    .error-accent { width: 48px; height: 48px; border: 1px solid rgba(255,185,156,.4); background: rgba(220,132,99,.13); border-radius: 15px; display: grid; place-items: center; color: #ffb79a; font-size: 23px; margin: 24px auto; }
+    details { margin: 20px auto 0; color: var(--soft); font-size: 12px; text-align: left; max-width: 500px; }
+    details summary { cursor: pointer; }
+    details pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface); padding: 12px; border-radius: 10px; font-family: Consolas, monospace; }
+    .toast { padding: 11px 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 12px; margin-bottom: 19px; }
+    @media (max-width: 1080px) { .main { padding: 0 32px 35px; } .sidebar { width: 204px; flex-basis: 204px; } .hero { gap: 4px; } .vinyl-halo { min-width: 245px; } .card { padding: 20px; } }
+    @media (max-width: 900px) { .main { padding: 0 25px 30px; } .cards { gap: 9px; } .platform-card { padding: 17px; } .metric-grid { gap: 8px; } .metric { padding: 17px 12px; } }
+  </style>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Music Insight</div>
+      <div class="section-label">EXPLORE</div>
+      <nav class="nav" id="nav" aria-label="页面导航"></nav>
+      <div class="side-bottom">LISTEN · UNDERSTAND · DISCOVER<br><span id="side-version"></span></div>
+    </aside>
+    <main class="main">
+      <header class="topline"><span class="crumb" id="crumb">MUSIC INSIGHT / 首页</span><span class="top-status">本机整理 · 私人空间</span></header>
+      <div id="content" class="page"><div class="page-header"><h2>正在打开你的音乐世界…</h2></div></div>
+    </main>
+  </div>
+  <script>
+    'use strict';
+    let state = null, revision = -1, bridgeReady = false, polling = false;
+    const content = document.getElementById('content');
+    const nav = document.getElementById('nav');
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const labels = {home:'首页', platforms:'选择平台', login:'连接账号', connected:'已连接', progress:'整理中', music:'我的音乐', ai:'AI 分析', export:'导出', settings:'设置', error:'遇到问题'};
+    const navItems = [['home','⌂','首页'],['music','◉','我的音乐'],['ai','✦','AI 分析'],['export','⇩','导出'],['settings','⚙','设置']];
+    function button(text, action, cls='') { return `<button class="btn ${cls}" data-action="${action}">${text}</button>`; }
+    function header(kicker, title, detail='') { return `<div class="page-header"><div class="eyebrow">${kicker}</div><h2>${title}</h2>${detail ? `<p>${detail}</p>` : ''}</div>`; }
+    function toast() { return state.toast ? `<div class="toast">${esc(state.toast)}</div>` : ''; }
+    function home() { return `${toast()}<div class="hero"><div><div class="eyebrow">A SPACE FOR YOUR MUSIC</div><h1>听见<span>自己。</span></h1><p class="lead">整理你的音乐数据，<br>看见属于自己的音乐世界。</p><div class="hero-actions">${button('开始探索　→','explore','primary')}<span class="small-note">只需选择平台，然后扫码</span></div></div><div class="vinyl-wrap"><div class="vinyl-halo"><div class="vinyl"><div class="vinyl-center"></div></div></div></div></div><div class="hero-foot">LISTEN. &nbsp;&nbsp; UNDERSTAND. &nbsp;&nbsp; DISCOVER.</div>`; }
+    function platforms() { return `${toast()}${header('CONNECT YOUR MUSIC','选择你的音乐平台','每一步都有引导。你的音乐数据默认只保存在这台电脑上。')}<div class="cards"><section class="card platform-card"><div class="platform-icon net">♪</div><h3>网易云音乐</h3><p>喜欢歌曲<br>创建和收藏的歌单<br>可获取的播放记录</p>${button('连接网易云　→','start-netease','primary')}</section><section class="card platform-card"><div class="platform-icon qq">♫</div><h3>QQ 音乐</h3><p>我喜欢<br>创建与收藏歌单<br>可获取的音乐数据</p>${button('连接 QQ 音乐　→','start-qq','primary')}</section><section class="card platform-card"><div class="platform-icon all">∞</div><h3>两个平台</h3><p>同时整理两个平台的数据，<br>形成联合音乐画像。</p>${button('联合分析　→','start-all','primary')}</section></div><div class="privacy">只读取你授权的账号数据。不下载歌曲，也不把音乐数据上传到作者服务器。</div>`; }
+    function login() { const expired = state.login_status === '二维码已过期'; return `${toast()}<div class="flow-panel">${header('CONNECT ACCOUNT',`连接${esc(state.provider_name || '音乐平台')}`,'二维码会直接显示在这里。请用对应音乐 App 扫描，并在手机上确认。')}<div class="qr-frame">${state.qr ? '<img id="qr-image" alt="登录二维码">' : '<div class="qr-placeholder">正在准备<br>登录二维码</div>'}</div><div class="status-pill">${esc(state.login_status)}</div><p style="margin:17px 0 0">${esc(state.message || `请使用${state.provider_name || '对应音乐'} App 扫描`)}</p><div class="flow-actions">${expired ? button('重新生成二维码','refresh','primary') : ''}${button('取消连接','cancel','ghost')}</div></div>`; }
+    function connected() { const first = Array.from(state.nickname || '音').slice(0,1).join(''); return `${toast()}<div class="flow-panel">${header('CONNECTED','已经连接好了','现在可以开始整理你的音乐世界。')}<div class="mono-avatar">${esc(first)}</div><div class="connected-check">✓ 已连接</div><h2 style="font-size:29px">${esc(state.nickname)}</h2><p>${esc(state.provider_name)}</p><div class="flow-actions">${button('开始整理我的音乐　→','begin','primary')}${button('取消','cancel','ghost')}</div></div>`; }
+    function progress() { const p=state.progress, ratio=p.tracks_total ? Math.max(0,Math.min(100,Math.round(p.tracks_current/p.tracks_total*100))) : 0; const value=(v,suffix='')=>v===null||v===undefined?'等待中':`✓ ${v}${suffix}`; return `${toast()}${header('ORGANIZING','正在整理你的音乐世界…',esc(state.message || p.phase || '你可以继续使用电脑，窗口会保持响应。'))}<section class="card progress-card"><div class="progress-row"><span>用户资料</span><span class="progress-value done">✓ 已读取</span></div><div class="progress-row"><span>喜欢歌曲</span><span class="progress-value ${p.liked!==null?'done':''}">${value(p.liked,' 首')}</span></div><div class="progress-row"><span>歌单</span><span class="progress-value ${p.playlists!==null?'done':''}">${value(p.playlists,' 个')}</span></div><div class="progress-row"><span>歌单歌曲</span><span class="progress-value">${p.tracks_total?`${p.tracks_current} / ${p.tracks_total} · ${ratio}%`:'等待中'}</span><div class="bar-track" role="progressbar" aria-valuenow="${ratio}" aria-valuemin="0" aria-valuemax="100"><div class="bar-fill" style="width:${ratio}%"></div></div></div><div class="progress-row"><span>播放记录</span><span class="progress-value ${p.history!==null?'done':''}">${state.provider==='qq'?'平台暂不提供':value(p.history,' 条')}</span></div></section><div style="text-align:center;margin-top:25px">${button('取消整理','cancel','ghost')}</div>`; }
+    function music() { if(!state.dashboard) return `${header('YOUR MUSIC','我的音乐','整理完成后，你的音乐概况会显示在这里。')}<div class="card empty"><p>还没有音乐数据。连接一个平台，开始探索。</p>${button('选择音乐平台','explore','primary')}</div>`; const m=state.dashboard; return `${toast()}${header('YOUR MUSIC','我的音乐','你的音乐数据已经准备好了。这里是这次整理的概况。')}<div class="metric-grid"><div class="metric"><strong>${m.liked}</strong><span>喜欢歌曲</span></div><div class="metric"><strong>${m.playlists}</strong><span>歌单</span></div><div class="metric"><strong>${m.unique}</strong><span>不同歌曲</span></div><div class="metric"><strong>${m.artists}</strong><span>歌手</span></div></div><div class="feature-grid"><section class="card"><div class="eyebrow">NEXT STEP</div><h3>把音乐交给 AI，继续发现</h3><p>上传整理好的文件，再选一个你感兴趣的问题。分析指南已经为你写好。</p>${button('查看导出文件','go-export','small')}</section><section class="card"><div class="eyebrow">READY</div><h3>你的文件都在本机</h3><p>数据摘要、AI 分析指南和可独立复制的提示词已保存在结果文件夹。</p>${button('打开结果文件夹','open-folder','small')}</section></div>`; }
+    function ai() { return `${toast()}${header('AI ANALYSIS','AI 分析','下一阶段会加入完整的 AI 分析中心。现在你已可以使用生成好的分析指南。')}<div class="card empty"><div class="eyebrow">START WITH ONE QUESTION</div><h3>我到底喜欢什么音乐？</h3><p>从音乐全景画像开始，或在指南里选择歌手、听歌习惯、音乐地图和听歌计划等方向。</p>${state.result_folder ? button('打开分析指南所在文件夹','open-folder','primary') : button('先整理音乐数据','explore','primary')}</div>`; }
+    function exportPage() { const rows=state.files.map((f,i)=>`<div class="file-row"><div class="file-glyph">${i===0?'AI':'MD'}</div><div><strong>${esc(f.name)}</strong><small>${esc(f.description)}</small></div></div>`).join(''); return `${toast()}${header('YOUR FILES','导出文件','文件保存在你选择的本地文件夹中。上传数据文件给 AI，再从指南中选一段提示词。')}${state.files.length ? `<div class="file-list">${rows}</div><p class="small-note">${esc(state.result_folder)}</p>${button('打开文件夹','open-folder','primary')}` : `<div class="card empty"><p>还没有导出文件。完成一次音乐整理后，这里会显示文件清单。</p>${button('选择音乐平台','explore','primary')}</div>`}`; }
+    function settings() { const s=state.settings; return `${toast()}${header('PREFERENCES','设置','让 Music Insight 按你喜欢的方式工作。')}<div class="settings-list"><section class="settings-row"><h3>输出位置</h3><p>导出的数据、摘要和 AI 指南会保存在这个文件夹。</p><div class="field-line"><input id="output-path" aria-label="输出路径" value="${esc(s.output_dir)}"><button class="btn small" data-action="choose-folder">选择</button><button class="btn small primary" data-action="save-folder">保存</button></div></section><section class="settings-row"><h3>外观主题</h3><p>选择阅读更舒适的界面颜色。</p><div class="option-row"><button class="btn small ${s.theme==='dark'?'active':''}" data-action="theme-dark">深色</button><button class="btn small ${s.theme==='light'?'active':''}" data-action="theme-light">浅色</button></div></section><section class="settings-row"><h3>数据与维护</h3><p>缓存只帮助下次继续获取；清除后会在下次重新读取。日志保存技术错误详情。</p><div class="option-row">${button('清除缓存','clear-cache','small')}${button('重新获取数据','fresh','small')}${button('打开日志目录','open-logs','small')}</div></section></div>`; }
+    function errorPage() { const e=state.error || {title:'遇到问题',body:'请稍后重试。',detail:''}; return `${header('SOMETHING HAPPENED',esc(e.title),'整理没有完成；已有缓存仍在本机。')}<div class="flow-panel"><div class="error-accent">!</div><p>${esc(e.body)}</p><div class="flow-actions">${button('重试','retry','primary')}${button('返回选择','explore','ghost')}</div><details><summary>查看详细信息</summary><pre>${esc(e.detail)}</pre></details></div>`; }
+    const pages = {home,platforms,login,connected,progress,music,ai,export:exportPage,settings,error:errorPage};
+    function render() { if (!state) return; document.documentElement.dataset.theme=state.settings.theme; document.getElementById('side-version').textContent=`VERSION ${state.version}`; document.getElementById('crumb').textContent=`MUSIC INSIGHT / ${labels[state.view] || '首页'}`; nav.innerHTML=navItems.map(([id,icon,label])=>`<button data-nav="${id}" class="${state.view===id?'active':''}" ${state.busy?'disabled':''}><span class="nav-icon" aria-hidden="true">${icon}</span>${label}</button>`).join(''); content.innerHTML=(pages[state.view] || home)(); const qr=document.getElementById('qr-image'); if(qr) qr.src=state.qr; }
+    async function poll() { if(!bridgeReady || polling) return; polling=true; try { const update=await window.pywebview.api.snapshot(revision); if(update.state) { revision=update.revision; state=update.state; render(); } } catch (error) { document.getElementById('crumb').textContent='MUSIC INSIGHT / 连接中'; } finally { polling=false; } }
+    async function invoke(name,...args) { try { const result=await window.pywebview.api[name](...args); if(result && result.ok===false && !result.cancelled && result.message) { alert(result.message); } await poll(); } catch(error) { alert('操作没有完成，请在日志中查看详情。'); } }
+    document.addEventListener('click',event=>{ const node=event.target.closest('[data-action],[data-nav]'); if(!node || !bridgeReady) return; if(node.dataset.nav) { invoke('navigate',node.dataset.nav); return; } const action=node.dataset.action; if(action==='explore'||action==='go-export') invoke('navigate',action==='explore'?'platforms':'export'); else if(action.startsWith('start-')) invoke('start',action.slice(6)); else if(action==='begin') invoke('begin_export'); else if(action==='refresh') invoke('refresh_qr'); else if(action==='cancel') invoke('cancel'); else if(action==='retry') invoke('start',state.selected); else if(action==='open-folder') invoke('open_result_folder'); else if(action==='open-logs') invoke('open_logs'); else if(action==='theme-dark'||action==='theme-light') invoke('set_theme',action.slice(6)); else if(action==='save-folder') invoke('set_output_dir',document.getElementById('output-path').value); else if(action==='choose-folder') invoke('choose_output_dir'); else if(action==='fresh') { if(state.selected) invoke('start',state.selected,true); else invoke('navigate','platforms'); } else if(action==='clear-cache') { if(confirm('清除近期缓存？已导出的文件不会删除。')) invoke('clear_cache'); } });
+    window.addEventListener('pywebviewready',()=>{ bridgeReady=true; poll(); setInterval(poll,350); });
+  </script>
+</body>
+</html>

@@ -18,9 +18,10 @@ def _timestamp(value):
 
 
 class ExportService:
-    def __init__(self, api, root: Path, notify=None, *, fresh=False):
+    def __init__(self, api, root: Path, notify=None, *, fresh=False, output_dir=None):
         self.api = api
         self.root = root
+        self.output_dir = Path(output_dir) if output_dir is not None else root / "output"
         self.notify = notify or (lambda message: None)
         self.fresh = fresh
         self.issues = []
@@ -86,7 +87,7 @@ class ExportService:
     def run(self, profile):
         uid = profile["userId"]
         nickname = profile.get("nickname") or "网易云用户"
-        folder = self.root / "output" / f"{safe_name(nickname)}_{uid}"
+        folder = self.output_dir / f"{safe_name(nickname)}_{uid}"
         cache = self.root / ".cache" / str(uid)
         cache.mkdir(parents=True, exist_ok=True)
         folder.mkdir(parents=True, exist_ok=True)
