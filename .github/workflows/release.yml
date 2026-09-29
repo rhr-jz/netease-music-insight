@@ -15,12 +15,14 @@ jobs:
       - run: python -m pip install -r requirements-desktop.txt pyinstaller==6.16.0
       - run: python -m unittest discover -s tests -v
       - run: python run_desktop.py --smoke
+      - run: python run_desktop.py --web-smoke
+      - run: python run_web.py --smoke
       - run: pyinstaller --onedir --windowed --clean --noupx --name MusicInsight --collect-all webview --collect-all qqmusic_api --add-data "netease_music_insight/desktop/assets/index.html;netease_music_insight/desktop/assets" run_desktop.py
       - name: Check packaged GUI entry point
         shell: pwsh
         run: |
           $exe = (Resolve-Path 'dist/MusicInsight/MusicInsight.exe').Path
-          foreach ($argument in @('--smoke', '--version')) {
+          foreach ($argument in @('--smoke', '--web-smoke', '--version')) {
             $process = Start-Process -FilePath $exe -ArgumentList $argument -PassThru -Wait
             if ($process.ExitCode -ne 0) { throw "MusicInsight.exe $argument failed with $($process.ExitCode)" }
           }

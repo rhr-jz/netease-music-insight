@@ -1,7 +1,11 @@
-# Music Insight 1.5.0
+# Music Insight 2.0.0
 
-- “我的音乐”加入常出现歌手与专辑、歌单规模、Combined 平台对比、数据来源和更新时间，以及本地歌曲、歌手、专辑搜索。数据来自导出文件，只展示事实。
-- “AI 分析”提供 12 个单平台方向和 1 个双平台方向、推荐路线、完整 Prompt、Windows 原生一键复制及上传说明；QQ 播放历史和缺少可靠时间时会明确提示数据边界。
-- 桌面端重开后可离线恢复历史导出，查看 Dashboard、切换数据来源、浏览分析方向和复制 Prompt。原有 JSON、摘要、指南和 `prompts/` 文件继续生成；CLI 保留。
+Music Insight 从命令行数据导出工具升级为 Windows 图形化应用，同时保留 CLI。
 
-Windows 继续发布完整目录 ZIP，运行需 Microsoft Edge WebView2 Runtime。安全软件若拦截，请参阅 SECURITY.md，不要关闭防护。macOS 与 Linux 继续使用源码启动方式；本版本没有独立 Web 端或收费 AI API 接入。
+- 应用内连接网易云音乐、QQ 音乐或两个平台；扫码二维码直接显示在窗口中，登录与导出进度持续更新，可取消任务。
+- “我的音乐”展示已导出数据的事实统计、常见歌手与专辑、歌单规模、数据来源和更新时间，支持本地搜索与离线恢复。
+- “AI 分析”提供 12 个单平台方向和 1 个跨平台方向；完整 Prompt 可直接查看、复制，同时继续写入文件。
+- 新增隐私优先的 Local Web：默认只监听 `127.0.0.1` 随机端口，从桌面设置打开或源码运行，复用相同 Core 与界面。
+- 重写 README，加入匿名产品截图、Windows 快速开始、Local Web 和隐私说明。
+
+Windows 发布包仍是完整目录 ZIP，解压后运行 `MusicInsight.exe`，无需安装 Python；需要 Microsoft Edge WebView2 Runtime。网易云与 QQ 音乐数据获取依赖平台当前可用接口；网易云播放历史可能不完整，QQ 音乐完整播放历史不可用。遇到安全软件拦截时请阅读 [下载与安全说明](https://github.com/rhr-jz/netease-music-insight/blob/main/SECURITY.md)，不要关闭防护。

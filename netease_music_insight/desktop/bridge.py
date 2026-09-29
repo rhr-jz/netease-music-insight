@@ -9,6 +9,7 @@ from threading import Event, RLock, Thread
 
 from .. import __version__
 from ..auth import LoginBack
+from ..diagnostics import redact_text
 from ..errors import ExportCancelled, MusicInsightError
 from ..guidance import TOPICS, prompt_for
 from ..platform_utils import open_path
@@ -24,15 +25,15 @@ def _friendly_error(exc, provider):
     code = getattr(exc, "code", "export_failed")
     if code == "network_unavailable":
         return {"title": "连接暂时不顺畅", "body": f"暂时无法连接{PROVIDERS.get(provider, '音乐平台')}。请检查网络和代理设置，然后重试。",
-                "detail": str(exc)}
+                "detail": redact_text(exc)}
     if code == "login_failed":
         return {"title": "登录没有完成", "body": "请检查二维码是否过期，并用对应音乐 App 扫描、在手机上确认。",
-                "detail": str(exc)}
+                "detail": redact_text(exc)}
     if code == "provider_unavailable":
         return {"title": "运行组件尚未准备好", "body": "请检查网络、磁盘空间和文件夹写入权限，然后重试。",
-                "detail": str(exc)}
+                "detail": redact_text(exc)}
     return {"title": "这次整理没有完成", "body": "音乐平台可能暂时不可用。请稍后重试；已有缓存会保留。",
-            "detail": str(exc)}
+            "detail": redact_text(exc)}
 
 
 class DesktopBridge:

@@ -4,9 +4,11 @@ import time
 import unittest
 from pathlib import Path
 from threading import Thread
+from unittest.mock import patch
 
 from netease_music_insight.desktop.bridge import DesktopBridge
 from netease_music_insight.events import MusicEvent
+from netease_music_insight.errors import LoginFailure, NetworkUnavailable
 from netease_music_insight.service import CancellationToken
 
 
@@ -139,6 +141,63 @@ class DesktopTests(unittest.TestCase):
             self.assertTrue(bridge.refresh_qr()["ok"])
             worker.join(timeout=2)
             self.assertFalse(worker.is_alive())
+
+    def test_unwritable_output_directory_has_friendly_error(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            bridge = DesktopBridge(Path(temp), service_factory=FakeService)
+            with patch.object(Path, "mkdir", side_effect=PermissionError("denied")):
+                result = bridge.set_output_dir(str(Path(temp) / "不可写"))
+            self.assertFalse(result["ok"])
+            self.assertIn("无法使用", result["message"])
+
+    def test_cancel_mid_export_keeps_cache_and_previous_output(self):
+        class SlowService(FakeService):
+            def export_provider(self, provider):
+                self.emit(MusicEvent("login_started", provider))
+                self.emit(MusicEvent("profile_done", provider,
+                                     details={"nickname": "测试用户"}))
+                self.emit(MusicEvent("export_started", provider))
+                self.emit(MusicEvent("playlist_tracks_progress", provider,
+                                     current=50, total=88))
+                while True:
+                    self.cancellation.check()
+                    time.sleep(0.01)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            previous = root / "output" / "netease" / "music_for_ai.json"
+            previous.parent.mkdir(parents=True)
+            previous.write_text("previous export", encoding="utf-8")
+            cached = root / ".cache" / "sample.json"
+            cached.parent.mkdir()
+            cached.write_text("cached stage", encoding="utf-8")
+            bridge = DesktopBridge(root, service_factory=SlowService)
+            self.assertTrue(bridge.start("netease")["ok"])
+            until(lambda: bridge.snapshot()["state"]["view"] == "connected")
+            self.assertTrue(bridge.begin_export()["ok"])
+            until(lambda: bridge.snapshot()["state"]["progress"]["tracks_current"] == 50)
+            self.assertTrue(bridge.cancel()["ok"])
+            until(lambda: not bridge.snapshot()["state"]["busy"])
+            self.assertEqual(previous.read_text(encoding="utf-8"), "previous export")
+            self.assertEqual(cached.read_text(encoding="utf-8"), "cached stage")
+
+    def test_network_and_login_errors_are_friendly_and_redacted(self):
+        for failure, title in ((NetworkUnavailable, "连接暂时不顺畅"),
+                               (LoginFailure, "登录没有完成")):
+            with self.subTest(failure=failure.__name__), tempfile.TemporaryDirectory() as temp:
+                class FailingService(FakeService):
+                    def export_provider(self, _provider):
+                        raise failure("timeout cookie=private-session-value")
+
+                bridge = DesktopBridge(Path(temp), service_factory=FailingService)
+                with patch("netease_music_insight.desktop.bridge.logging.exception"):
+                    self.assertTrue(bridge.start("netease")["ok"])
+                    until(lambda: bridge.snapshot()["state"]["view"] == "error")
+                error = bridge.snapshot()["state"]["error"]
+                self.assertEqual(error["title"], title)
+                self.assertNotIn("private-session-value", str(error))
+                self.assertNotIn("Traceback", str(error))
 
 
 if __name__ == "__main__":

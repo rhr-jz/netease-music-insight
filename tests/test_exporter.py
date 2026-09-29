@@ -58,3 +58,15 @@ class ExportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaises(ApiError):
                 ExportService(BadApi(), Path(temp), notify=lambda _: None).run({"userId": 9})
+
+    def test_corrupt_cache_is_refetched(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            cache = root / ".cache" / "9"
+            cache.mkdir(parents=True)
+            (cache / "liked_ids.json").write_text("{broken", encoding="utf-8")
+            api = FakeApi()
+            folder, data = ExportService(api, root).run({"userId": 9, "nickname": "测试"})
+            self.assertEqual(data["statistics"]["liked_song_count"], 1)
+            self.assertTrue((folder / "music_for_ai.json").is_file())
+            self.assertIn("/likelist", [path for path, _ in api.calls])

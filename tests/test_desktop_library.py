@@ -1,5 +1,6 @@
 """Offline Dashboard and AI Center checks using real report files."""
 import os
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -99,6 +100,26 @@ class DesktopLibraryTests(unittest.TestCase):
             topic = bridge.get_topic(12)["topic"]
             self.assertFalse(topic["available"])
             self.assertIn("不要编造变化年份", topic["prompt"])
+
+    def test_large_catalog_does_not_enter_gui_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp:
+            bridge = DesktopBridge(Path(temp))
+            for total in (5000, 10001):
+                with self.subTest(total=total):
+                    data = sample("netease")
+                    songs = [{"id": index, "name": f"测试歌曲 {index}",
+                              "artists": "测试歌手", "album": "测试专辑"}
+                             for index in range(total)]
+                    data["liked_songs"] = songs
+                    data["song_catalog"] = songs
+                    data["statistics"]["liked_song_count"] = total
+                    data["statistics"]["unique_song_count"] = total
+                    bridge._set_result(Path(temp) / "output" / "demo", data, view="music")
+                    state = bridge.snapshot()["state"]
+                    self.assertEqual(state["dashboard"]["unique"], total)
+                    self.assertNotIn("song_catalog", state)
+                    self.assertLess(len(json.dumps(state, ensure_ascii=False)), 30_000)
+                    self.assertEqual(len(bridge.search_catalog("测试歌曲")["results"]), 30)
 
 
 if __name__ == "__main__":

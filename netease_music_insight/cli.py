@@ -6,6 +6,7 @@ from pathlib import Path
 
 from . import __version__
 from .auth import LoginBack
+from .diagnostics import configure_error_logging
 from .service import MusicInsightService
 from .ui import ConsoleUI, PLATFORM_NAMES
 
@@ -88,11 +89,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     ui = ConsoleUI()
     root = app_root()
+    log_handler = None
     try:
-        log_dir = root / "logs"
-        log_dir.mkdir(exist_ok=True)
-        logging.basicConfig(filename=log_dir / "error.log", level=logging.ERROR,
-                            format="%(asctime)s %(levelname)s %(message)s")
+        log_handler = configure_error_logging(root)
         ui.welcome(__version__)
         while True:
             selected = args.provider or ui.choose_provider()
@@ -115,6 +114,10 @@ def main(argv=None):
         logging.exception("application failed")
         ui.error(exc)
         return 1
+    finally:
+        if log_handler is not None:
+            logging.getLogger().removeHandler(log_handler)
+            log_handler.close()
 
 
 if __name__ == "__main__":

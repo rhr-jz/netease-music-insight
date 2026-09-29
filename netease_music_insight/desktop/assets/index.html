@@ -95,6 +95,10 @@
     .status-pill { display: inline-block; border: 1px solid var(--line); background: var(--surface); padding: 9px 15px; border-radius: 100px; color: var(--text); font-size: 13px; }
     .status-pill::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); margin-right: 8px; }
     .flow-actions { margin-top: 25px; display: flex; gap: 10px; justify-content: center; }
+    @media (max-height: 760px) {
+      .flow-panel .qr-frame { width: 218px; height: 218px; margin: 12px auto 9px; }
+      .flow-panel .flow-actions { margin-top: 12px; }
+    }
     .mono-avatar { width: 90px; height: 90px; border-radius: 50%; margin: 40px auto 23px; background: linear-gradient(135deg, #8f88d9, #5484a3); display: grid; place-items: center; color: #fff; font-size: 37px; font-weight: 650; }
     .connected-check { color: var(--ok); font-size: 13px; font-weight: 700; letter-spacing: 2px; margin-bottom: 11px; }
     .progress-card { max-width: 680px; margin: 14px auto 0; padding: 25px 31px; }

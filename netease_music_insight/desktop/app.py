@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from .. import __version__
+from ..diagnostics import configure_error_logging
 from .bridge import DesktopBridge
 
 
@@ -21,20 +22,14 @@ def html_path():
 
 
 def _configure_logging(root):
-    folder = root / "logs"
-    folder.mkdir(parents=True, exist_ok=True)
-    logger = logging.getLogger()
-    logger.setLevel(logging.ERROR)
-    if not any(isinstance(handler, logging.FileHandler) for handler in logger.handlers):
-        handler = logging.FileHandler(folder / "error.log", encoding="utf-8")
-        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-        logger.addHandler(handler)
+    configure_error_logging(root)
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Music Insight Windows desktop")
     parser.add_argument("--version", action="version", version=f"Music Insight {__version__}")
     parser.add_argument("--smoke", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--web-smoke", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     root = app_root()
     path = html_path()
@@ -43,6 +38,20 @@ def main(argv=None):
         assert "Music Insight" in path.read_text(encoding="utf-8")
         assert DesktopBridge(root).snapshot()["state"]["view"] == "home"
         print("Music Insight desktop assets OK")
+        return 0
+    if args.web_smoke:
+        from urllib.request import urlopen
+        from ..web.server import start_server
+
+        server, thread = start_server(root, open_browser=False)
+        try:
+            with urlopen(server.origin, timeout=5) as response:
+                assert b"Music Insight" in response.read()
+            print("Music Insight packaged Local Web OK")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
         return 0
     _configure_logging(root)
     try:

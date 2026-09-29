@@ -6,7 +6,7 @@
 
 一键整理两个平台的个人听歌数据，通过可视化和模块化 AI Prompt，帮助你理解自己的音乐习惯与音乐审美。
 
-[下载 Windows 版](https://github.com/rhr-jz/netease-music-insight/releases) · [快速开始](docs/QUICK_START.md) · [常见问题](docs/FAQ.md) · [English](README_EN.md)
+[下载 Windows 版](https://github.com/rhr-jz/netease-music-insight/releases/latest) · [快速开始](docs/QUICK_START.md) · [常见问题](docs/FAQ.md) · [English](README_EN.md)
 
 ## 界面截图
 
@@ -34,7 +34,7 @@
 
 ## Windows 快速开始
 
-1. 从 [GitHub Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载带桌面界面的 `MusicInsight-Windows-Portable.zip`，**完整解压**。
+1. 从 [最新 GitHub Release](https://github.com/rhr-jz/netease-music-insight/releases/latest) 下载带桌面界面的 `MusicInsight-Windows-Portable.zip`，**完整解压**。
 2. 双击文件夹中的 `MusicInsight.exe`。
 3. 选择网易云音乐、QQ 音乐或“两个平台”。
 4. 用对应的音乐 App 扫描应用内二维码，并在手机确认。

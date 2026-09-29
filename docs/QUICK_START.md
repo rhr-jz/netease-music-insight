@@ -2,7 +2,7 @@
 
 ## Windows 桌面版
 
-1. 在 [GitHub Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载带图形界面的 `MusicInsight-Windows-Portable.zip`，完整解压。
+1. 在 [最新 GitHub Release](https://github.com/rhr-jz/netease-music-insight/releases/latest) 下载带图形界面的 `MusicInsight-Windows-Portable.zip`，完整解压。
 2. 双击文件夹中的 `MusicInsight.exe`。不要把 EXE 单独移出解压目录。
 3. 选择网易云音乐、QQ 音乐或“两个平台”，用对应 App 扫描程序内二维码并在手机上确认。
 4. 点击“开始整理我的音乐”。完成后，在“我的音乐”查看 Dashboard，在“AI 分析”选择方向并复制 Prompt。
