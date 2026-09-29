@@ -78,14 +78,33 @@ def available_topics(data, *, combined=False):
             (topic.number != 10 or has_playlists)]
 
 
-def prompt_for(topic, *, combined=False):
+def prompt_for(topic, *, combined=False, data=None):
     filename = "music_for_ai_combined.json" if combined else "music_for_ai.json"
+    notes = []
+    if data is not None:
+        platforms = list(data.get("platforms", {}).values()) if combined else [data]
+        if any((platform.get("export_meta") or {}).get("provider") == "qq_music"
+               for platform in platforms):
+            notes.append("当前数据缺少可靠的完整播放历史，QQ 音乐播放历史不可用。不要把播放历史缺失解释为用户不重复听歌。")
+        if topic.number in {5, 12} and not any(
+            any((platform.get("statistics") or {}).get(key, 0) for key in (
+                "liked_songs_with_time", "playlists_with_creation_time",
+                "playlists_with_subscription_time")) for platform in platforms
+        ):
+            notes.append("当前没有可靠的收藏或歌单时间。不要编造变化年份或年度回顾；如无法完成此方向，请直接说明缺失了哪些时间数据。")
+        if topic.number == 10 and not any(
+            (platform.get("statistics") or {}).get("playlist_count", 0)
+            for platform in platforms
+        ):
+            notes.append("当前没有可用歌单。不要声称已检查歌单；只说明将来可以如何整理。")
+    context = "".join(f"{note}\n" for note in notes)
     return (f"请完整读取我上传的 {filename}。\n"
             "请先检查导出状态、数据缺口及各平台实际可用的字段，尽量覆盖完整文件，不要只看前几十首歌。"
             "用中文回答；把数据明确支持的结论、较强推测和待验证的假设分开，引用具体歌曲、歌手或歌单作为证据。"
             "收藏数量不等于喜欢程度，收藏歌单也不代表听过每首歌；不要凭少量歌曲推断人格。"
             "时间为空就说未知，不要按列表顺序推断日期。QQ 的 favorite_order_at 只是收藏排序时间。"
-            "播放历史不存在或范围有限时，不要虚构播放次数或听歌时间。\n\n"
+            "播放历史不存在或范围有限时，不要虚构播放次数或听歌时间。\n"
+            f"{context}\n"
             f"我的问题：{topic.question}\n"
             f"具体任务：{topic.task}\n"
             "请以易读的小标题组织结果，先说明数据依据与限制，再给出分析和少量可行动建议。")
@@ -116,7 +135,7 @@ def guide_markdown(data, *, combined=False):
         intro += [f"## {topic.number:02d} {topic.title}", "", "### 适合你，如果你想知道", "", topic.question,
                   "", "### AI 会帮你分析", "", topic.scope, "",
                   f"联网：{topic.network} · 分析深度：{topic.depth}", "", "### 复制下面的 Prompt", "",
-                  "```text", prompt_for(topic, combined=combined), "```", ""]
+                  "```text", prompt_for(topic, combined=combined, data=data), "```", ""]
     return "\n".join(intro)
 
 
@@ -130,5 +149,5 @@ def write_guidance(folder, data, *, combined=False):
     for topic in topics:
         atomic_text(folder / "prompts" / topic.filename,
                     f"# {topic.number:02d} {topic.title}\n\n联网：{topic.network} · 分析深度：{topic.depth}\n\n"
-                    f"{prompt_for(topic, combined=combined)}\n")
+                    f"{prompt_for(topic, combined=combined, data=data)}\n")
     return topics

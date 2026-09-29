@@ -3,8 +3,8 @@
 1. **下载**：[Windows 发布页](https://github.com/rhr-jz/netease-music-insight/releases)下载 `MusicInsight-Windows-Portable.zip`，完整解压。
 2. **双击**：新版目录包中双击 `MusicInsight.exe`，旧版目录包仍使用 `MusicInsight-Windows-Portable.exe`。新版界面需要 Microsoft Edge WebView2 Runtime。
 3. **扫码**：在界面选择网易云、QQ 音乐或两个平台，用对应音乐 App 扫描程序内的二维码并在手机确认。登录后点击“开始整理我的音乐”。
-4. **上传**：导出完成后，打开结果文件夹，把 `music_for_ai.json` 上传给你常用的 AI。两个平台联合分析时上传 `output/combined/music_for_ai_combined.json`。
-5. **复制**：打开同一文件夹中的 `AI_ANALYSIS_GUIDE.md`，挑一个感兴趣的问题，复制该模块的完整提示词并发送。ChatGPT、Claude、Gemini 或其他支持上传文件的 AI 都可使用。
+4. **查看**：导出完成后，“我的音乐”展示数量、常出现歌手与专辑，也可搜索本地歌曲。重新打开桌面端或断网后仍可查看已导出的数据。
+5. **分析**：在“AI 分析”选择一个方向，直接阅读并复制完整 Prompt。按页面说明，把“导出”页列出的 `music_for_ai.json` 上传给你常用的 AI；两个平台联合分析时上传 `music_for_ai_combined.json`。ChatGPT、Claude、Gemini 或其他支持文件上传的 AI 都可使用。
 
 macOS 源码版：先安装 [Python 3.10+](https://www.python.org/downloads/macos/)，下载仓库 ZIP 并完整解压，然后双击 `一键运行.command`。若导出网易云，还需安装 [Node.js 18+](https://nodejs.org/)；仅导出 QQ 音乐无需 Node.js。之后同样按第 3–5 步操作。若 macOS 询问 Terminal 的文件夹访问权限，请根据文件所在位置允许访问。
 

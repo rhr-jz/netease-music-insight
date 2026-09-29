@@ -50,8 +50,8 @@ flowchart LR
 
 ## 后台任务与取消
 
-每次只运行一个导出任务。GUI 主线程仅绘制，Worker Thread 执行 `MusicInsightService`；QQ 的 `asyncio.run` 只在 Worker 内部运行。线程安全队列将不可变 `MusicEvent` 送回窗口或本地 Web 服务，因此抓取时仍可拖动、最小化和查看进度。`CancellationToken` 已在 Service、二维码轮询、QQ 请求边界及 Provider 通知点提供协作取消；网络请求不会被强行杀死，需待当前请求超时或返回后执行清理。下一阶段接入取消按钮时，验证 Provider logout、Node 子进程退出，以及取消后不把部分文件显示为成功结果。
+每次只运行一个导出任务。GUI 主线程仅绘制，Worker Thread 执行 `MusicInsightService`；QQ 的 `asyncio.run` 只在 Worker 内部运行。Bridge 用锁保护状态快照，窗口定时读取进度，因此抓取时仍可拖动、最小化和查看进度。取消按钮已接入 `CancellationToken`，在 Service、二维码轮询、QQ 请求边界及 Provider 通知点协作取消；网络请求不会被强行杀死，需待当前请求超时或返回后执行清理。已导出数据和缓存不会因取消而主动删除。
 
-## 下一阶段
+## 桌面实现
 
-`run_desktop.py` 启动 `desktop/app.py`，窗口通过 pywebview 的本机 JS API 访问 `desktop/bridge.py`。Bridge 以后台线程调用同一个 `MusicInsightService`，把扫码图片读为内存中的 Data URL，按事件更新连接、进度和结果页面；数据文件仍由原 Provider、报告和指南模块生成。窗口关闭及“取消”按钮使用同一个协作取消令牌。WebView2 Runtime 是 Windows 运行依赖；不需要本地 HTTP 端口。Web 端与完整 AI 分析中心留待后续阶段。数据格式详见[数据格式](DATA_FORMAT.md)。
+`run_desktop.py` 启动 `desktop/app.py`，窗口通过 pywebview 的本机 JS API 访问 `desktop/bridge.py`。Bridge 以后台线程调用同一个 `MusicInsightService`，把扫码图片读为内存中的 Data URL，按事件更新连接、进度和结果页面；数据文件仍由原 Provider、报告和指南模块生成。窗口关闭及“取消”按钮使用同一个协作取消令牌。第 3 阶段的 `desktop/library.py` 从既有 JSON 恢复本地 Dashboard、历史来源和 AI 分析卡片；Prompt 始终由共享 `guidance.py` 生成，复制使用 Windows 原生 Unicode 剪贴板。WebView2 Runtime 是 Windows 运行依赖；不需要本地 HTTP 端口。Web 端留待后续阶段。数据格式详见[数据格式](DATA_FORMAT.md)。

@@ -24,6 +24,7 @@ ChatGPT / Claude / Gemini / 其他支持文件上传的 AI
 - 选择两个平台时生成联合报告，仅自动合并高置信的同一首录音。
 - 保留接口实际提供的歌曲收藏时间、歌单创建时间与 QQ 收藏歌单排序时间；缺失的时间标记未知。
 - 自动生成 `music_for_ai.json`、易读概要、分领域 AI 指南和可单独复制的提示词。
+- Windows 桌面端会自动恢复本地导出记录；断网后仍能查看 Dashboard、切换历史来源、搜索歌曲和复制 Prompt。重新同步平台数据时才需要网络。
 - 歌单有无权限或下架内容时继续导出，并标出缺失范围。
 - 数据只保存在你的电脑中；程序不要求密码，也不上传数据到作者服务器。
 
@@ -33,7 +34,7 @@ ChatGPT / Claude / Gemini / 其他支持文件上传的 AI
 
 1. 到 [Releases](https://github.com/rhr-jz/netease-music-insight/releases) 下载包含桌面界面的新版 `MusicInsight-Windows-Portable.zip`，完整解压后双击 `MusicInsight.exe`。需要 Windows 10/11 和 Microsoft Edge WebView2 Runtime；首次使用网易云时需要联网准备本地接口组件。
 2. 在界面中选择平台，使用相应手机 App 扫描程序内显示的二维码并确认，再点“开始整理我的音乐”。
-3. 在“我的音乐”查看概况，在“导出”打开结果文件夹。把 `music_for_ai.json` 上传给支持文件分析的 AI，再从 `AI_ANALYSIS_GUIDE.md` 选择一个问题复制提示词。选两个平台时，优先上传联合结果中的 `music_for_ai_combined.json`。旧版 Release 仍是命令行界面。
+3. 在“我的音乐”查看事实统计、常见歌手与专辑，也可以搜索本地歌曲。进入“AI 分析”选择方向、阅读完整 Prompt 并一键复制；“导出”页列出要上传的 JSON 并能打开数据文件夹。两个平台时上传 `music_for_ai_combined.json`。旧版 Release 仍是命令行界面。
 
 ### Windows 10 / 11：源码运行
 

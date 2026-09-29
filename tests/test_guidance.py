@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from netease_music_insight.combined import build_combined, write_combined
-from netease_music_insight.guidance import available_topics, prompt_for
+from netease_music_insight.guidance import TOPICS, available_topics, prompt_for
 from netease_music_insight.report import build_data, write_reports
 from netease_music_insight.ui import ConsoleUI
 from netease_music_insight import cli
@@ -23,6 +23,15 @@ def sample(provider="netease", *, timed=False, playlist=True):
 
 
 class GuidanceTests(unittest.TestCase):
+    def test_qq_prompt_and_written_file_explain_missing_history(self):
+        data = sample("qq_music", timed=True)
+        prompt = prompt_for(TOPICS[3], data=data)
+        self.assertIn("不要把播放历史缺失解释为用户不重复听歌", prompt)
+        with tempfile.TemporaryDirectory() as temp:
+            write_reports(Path(temp), data)
+            written = (Path(temp) / "prompts" / TOPICS[3].filename).read_text("utf-8")
+            self.assertIn("不要把播放历史缺失解释为用户不重复听歌", written)
+
     def test_topics_follow_available_data_and_each_prompt_is_independent(self):
         data = sample(playlist=False)
         numbers = {topic.number for topic in available_topics(data)}

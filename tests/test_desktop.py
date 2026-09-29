@@ -86,7 +86,8 @@ class DesktopTests(unittest.TestCase):
             self.assertTrue(bridge.begin_export()["ok"])
             until(lambda: bridge.snapshot()["state"]["view"] == "music")
             state = bridge.snapshot()["state"]
-            self.assertEqual(state["dashboard"],
+            self.assertEqual({key: state["dashboard"][key]
+                              for key in ("liked", "playlists", "unique", "artists")},
                              {"liked": 6, "playlists": 8, "unique": 10, "artists": 2})
             self.assertEqual(len(state["files"]), 3)
             self.assertFalse(state["busy"])

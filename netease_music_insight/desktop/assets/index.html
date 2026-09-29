@@ -112,6 +112,49 @@
     .feature-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
     .feature-grid .card { min-height: 170px; }
     .feature-grid p { font-size: 13px; }
+    .data-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin: 2px 0 17px; flex-wrap: wrap; }
+    .data-meta { color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .source-select { max-width: 300px; min-width: 190px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); background: var(--surface-strong); padding: 10px 12px; font: inherit; font-size: 12px; }
+    .insight-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px; margin: 16px 0; }
+    .insight-grid .card { min-height: 245px; }
+    .chart-row { display: grid; grid-template-columns: minmax(65px, 1fr) minmax(110px, 2fr) 32px; align-items: center; gap: 10px; margin: 14px 0; font-size: 12px; }
+    .chart-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chart-row .count { text-align: right; color: var(--muted); }
+    .chart-track { height: 9px; border-radius: 50px; background: rgba(162,173,225,.14); overflow: hidden; }
+    .chart-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+    .rank-row, .platform-row { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding: 10px 0; font-size: 12px; }
+    .rank-row:last-child, .platform-row:last-child { border-bottom: 0; }
+    .rank-row span:last-child, .platform-row span:last-child { color: var(--muted); text-align: right; }
+    .playlist-facts { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .playlist-facts strong { color: var(--text); font-size: 15px; margin-right: 5px; }
+    .search-box { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-strong); color: var(--text); padding: 12px 14px; font: inherit; font-size: 13px; }
+    .search-results { margin-top: 12px; max-height: 340px; overflow: auto; }
+    .search-row { display: flex; justify-content: space-between; gap: 15px; border-bottom: 1px solid var(--line); padding: 10px 0; font-size: 12px; }
+    .search-row:last-child { border-bottom: 0; }
+    .search-row span:last-child { color: var(--muted); text-align: right; }
+    .section-head { margin: 32px 0 14px; }
+    .section-head h3 { margin-bottom: 4px; }
+    .section-head p { font-size: 13px; margin-bottom: 0; }
+    .route-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .route-card { padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg,rgba(152,132,239,.1),var(--surface)); }
+    .route-card h3 { font-size: 14px; }
+    .route-card p { font-size: 12px; line-height: 1.65; margin: 0; }
+    .topic-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 17px 0 35px; }
+    .topic-card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 19px; text-align: left; color: var(--text); min-height: 177px; display: flex; flex-direction: column; transition: transform .15s, border-color .15s; }
+    .topic-card:hover { transform: translateY(-2px); border-color: rgba(172,156,255,.55); }
+    .topic-card .topic-num { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: rgba(172,156,255,.14); color: var(--accent); font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+    .topic-card strong { font-size: 15px; margin-bottom: 7px; }
+    .topic-card small { color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .topic-card .topic-note { color: var(--warn); font-size: 11px; margin-top: auto; padding-top: 9px; }
+    .topic-detail { max-width: 850px; }
+    .topic-back { border: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; font-size: 13px; padding: 0; margin: 14px 0 25px; }
+    .scope-list { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 24px; }
+    .scope-list span { border: 1px solid var(--line); border-radius: 100px; padding: 8px 12px; color: var(--muted); font-size: 12px; }
+    .prompt-box { display: block; width: 100%; min-height: 340px; resize: vertical; border: 1px solid var(--line); border-radius: 14px; padding: 20px; color: var(--text); background: var(--surface); line-height: 1.8; font: 13px/1.8 "Microsoft YaHei UI", sans-serif; }
+    .copy-line { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; margin: 15px 0 27px; }
+    .copy-ok { color: var(--ok); font-size: 13px; }
+    .steps { padding-left: 23px; color: var(--muted); font-size: 13px; line-height: 2; }
+    .steps strong { color: var(--text); }
     .file-list { display: grid; gap: 10px; margin: 28px 0; }
     .file-row { display: flex; align-items: center; gap: 17px; padding: 18px 19px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
     .file-glyph { width: 36px; height: 43px; flex: 0 0 36px; background: rgba(167,152,238,.17); border: 1px solid rgba(167,152,238,.28); border-radius: 8px; display: grid; place-items: center; color: var(--accent); font-size: 10px; font-weight: 750; }
@@ -133,8 +176,8 @@
     details summary { cursor: pointer; }
     details pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface); padding: 12px; border-radius: 10px; font-family: Consolas, monospace; }
     .toast { padding: 11px 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 12px; margin-bottom: 19px; }
-    @media (max-width: 1080px) { .main { padding: 0 32px 35px; } .sidebar { width: 204px; flex-basis: 204px; } .hero { gap: 4px; } .vinyl-halo { min-width: 245px; } .card { padding: 20px; } }
-    @media (max-width: 900px) { .main { padding: 0 25px 30px; } .cards { gap: 9px; } .platform-card { padding: 17px; } .metric-grid { gap: 8px; } .metric { padding: 17px 12px; } }
+    @media (max-width: 1080px) { .main { padding: 0 32px 35px; } .sidebar { width: 204px; flex-basis: 204px; } .hero { gap: 4px; } .vinyl-halo { min-width: 245px; } .card { padding: 20px; } .topic-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 900px) { .main { padding: 0 25px 30px; } .cards { gap: 9px; } .platform-card { padding: 17px; } .metric-grid { gap: 8px; } .metric { padding: 17px 12px; } .insight-grid { grid-template-columns: 1fr; } .route-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -154,6 +197,7 @@
   <script>
     'use strict';
     let state = null, revision = -1, bridgeReady = false, polling = false;
+    let activeTopic = null, copied = false, lastFolder = null, searchTimer = null;
     const content = document.getElementById('content');
     const nav = document.getElementById('nav');
     const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -167,16 +211,125 @@
     function login() { const expired = state.login_status === '二维码已过期'; return `${toast()}<div class="flow-panel">${header('CONNECT ACCOUNT',`连接${esc(state.provider_name || '音乐平台')}`,'二维码会直接显示在这里。请用对应音乐 App 扫描，并在手机上确认。')}<div class="qr-frame">${state.qr ? '<img id="qr-image" alt="登录二维码">' : '<div class="qr-placeholder">正在准备<br>登录二维码</div>'}</div><div class="status-pill">${esc(state.login_status)}</div><p style="margin:17px 0 0">${esc(state.message || `请使用${state.provider_name || '对应音乐'} App 扫描`)}</p><div class="flow-actions">${expired ? button('重新生成二维码','refresh','primary') : ''}${button('取消连接','cancel','ghost')}</div></div>`; }
     function connected() { const first = Array.from(state.nickname || '音').slice(0,1).join(''); return `${toast()}<div class="flow-panel">${header('CONNECTED','已经连接好了','现在可以开始整理你的音乐世界。')}<div class="mono-avatar">${esc(first)}</div><div class="connected-check">✓ 已连接</div><h2 style="font-size:29px">${esc(state.nickname)}</h2><p>${esc(state.provider_name)}</p><div class="flow-actions">${button('开始整理我的音乐　→','begin','primary')}${button('取消','cancel','ghost')}</div></div>`; }
     function progress() { const p=state.progress, ratio=p.tracks_total ? Math.max(0,Math.min(100,Math.round(p.tracks_current/p.tracks_total*100))) : 0; const value=(v,suffix='')=>v===null||v===undefined?'等待中':`✓ ${v}${suffix}`; return `${toast()}${header('ORGANIZING','正在整理你的音乐世界…',esc(state.message || p.phase || '你可以继续使用电脑，窗口会保持响应。'))}<section class="card progress-card"><div class="progress-row"><span>用户资料</span><span class="progress-value done">✓ 已读取</span></div><div class="progress-row"><span>喜欢歌曲</span><span class="progress-value ${p.liked!==null?'done':''}">${value(p.liked,' 首')}</span></div><div class="progress-row"><span>歌单</span><span class="progress-value ${p.playlists!==null?'done':''}">${value(p.playlists,' 个')}</span></div><div class="progress-row"><span>歌单歌曲</span><span class="progress-value">${p.tracks_total?`${p.tracks_current} / ${p.tracks_total} · ${ratio}%`:'等待中'}</span><div class="bar-track" role="progressbar" aria-valuenow="${ratio}" aria-valuemin="0" aria-valuemax="100"><div class="bar-fill" style="width:${ratio}%"></div></div></div><div class="progress-row"><span>播放记录</span><span class="progress-value ${p.history!==null?'done':''}">${state.provider==='qq'?'平台暂不提供':value(p.history,' 条')}</span></div></section><div style="text-align:center;margin-top:25px">${button('取消整理','cancel','ghost')}</div>`; }
-    function music() { if(!state.dashboard) return `${header('YOUR MUSIC','我的音乐','整理完成后，你的音乐概况会显示在这里。')}<div class="card empty"><p>还没有音乐数据。连接一个平台，开始探索。</p>${button('选择音乐平台','explore','primary')}</div>`; const m=state.dashboard; return `${toast()}${header('YOUR MUSIC','我的音乐','你的音乐数据已经准备好了。这里是这次整理的概况。')}<div class="metric-grid"><div class="metric"><strong>${m.liked}</strong><span>喜欢歌曲</span></div><div class="metric"><strong>${m.playlists}</strong><span>歌单</span></div><div class="metric"><strong>${m.unique}</strong><span>不同歌曲</span></div><div class="metric"><strong>${m.artists}</strong><span>歌手</span></div></div><div class="feature-grid"><section class="card"><div class="eyebrow">NEXT STEP</div><h3>把音乐交给 AI，继续发现</h3><p>上传整理好的文件，再选一个你感兴趣的问题。分析指南已经为你写好。</p>${button('查看导出文件','go-export','small')}</section><section class="card"><div class="eyebrow">READY</div><h3>你的文件都在本机</h3><p>数据摘要、AI 分析指南和可独立复制的提示词已保存在结果文件夹。</p>${button('打开结果文件夹','open-folder','small')}</section></div>`; }
-    function ai() { return `${toast()}${header('AI ANALYSIS','AI 分析','下一阶段会加入完整的 AI 分析中心。现在你已可以使用生成好的分析指南。')}<div class="card empty"><div class="eyebrow">START WITH ONE QUESTION</div><h3>我到底喜欢什么音乐？</h3><p>从音乐全景画像开始，或在指南里选择歌手、听歌习惯、音乐地图和听歌计划等方向。</p>${state.result_folder ? button('打开分析指南所在文件夹','open-folder','primary') : button('先整理音乐数据','explore','primary')}</div>`; }
-    function exportPage() { const rows=state.files.map((f,i)=>`<div class="file-row"><div class="file-glyph">${i===0?'AI':'MD'}</div><div><strong>${esc(f.name)}</strong><small>${esc(f.description)}</small></div></div>`).join(''); return `${toast()}${header('YOUR FILES','导出文件','文件保存在你选择的本地文件夹中。上传数据文件给 AI，再从指南中选一段提示词。')}${state.files.length ? `<div class="file-list">${rows}</div><p class="small-note">${esc(state.result_folder)}</p>${button('打开文件夹','open-folder','primary')}` : `<div class="card empty"><p>还没有导出文件。完成一次音乐整理后，这里会显示文件清单。</p>${button('选择音乐平台','explore','primary')}</div>`}`; }
+    function localDate(value) {
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? (value || '未知') : parsed.toLocaleString('zh-CN', {year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+    function music() {
+      if (!state.dashboard) return `${header('YOUR MUSIC','我的音乐','已整理过的数据会在这里自动恢复，即使断网也能查看。')}<div class="card empty"><p>还没有找到本地音乐数据。连接一个平台，开始探索。</p>${button('选择音乐平台','explore','primary')}</div>`;
+      const m = state.dashboard;
+      const maxArtist = Math.max(1,...m.top_artists.map(row=>row.count));
+      const artists = m.top_artists.length ? m.top_artists.map(row=>`<div class="chart-row"><span class="name" title="${esc(row.name)}">${esc(row.name)}</span><div class="chart-track"><div class="chart-fill" style="width:${Math.round(row.count/maxArtist*100)}%"></div></div><span class="count">${row.count}</span></div>`).join('') : '<p>暂无歌手数据。</p>';
+      const albums = m.top_albums.length ? m.top_albums.map((row,i)=>`<div class="rank-row"><span>${String(i+1).padStart(2,'0')} · ${esc(row.name)}</span><span>${row.count} 首</span></div>`).join('') : '<p>暂无专辑数据。</p>';
+      const sourceOptions = state.sources.map(row=>`<option value="${row.id}" ${row.id===state.source_id?'selected':''}>${esc(row.label)} · ${esc(localDate(row.updated_at))}</option>`).join('');
+      const compare = m.platforms.length > 1 ? `<div class="section-head"><h3>两个平台，各自的数据</h3><p>数量来自各平台导出结果；跨平台重复歌曲只在总计中去重。</p></div><section class="card">${m.platforms.map(row=>`<div class="platform-row"><strong>${esc(row.name)}</strong><span>喜欢 ${row.liked} · 歌单 ${row.playlists} · 不同歌曲 ${row.unique}</span></div>`).join('')}</section>` : '';
+      return `${toast()}${header('YOUR MUSIC','我的音乐','这些数字只陈述已获取的数据，不解释你的性格或喜好原因。')}
+        <div class="data-toolbar"><div class="data-meta">${esc(m.source)} · 更新于 ${esc(localDate(m.updated_at))}${m.status==='partial'?' · 部分数据未能获取':''}</div>${state.sources.length>1?`<select id="source-select" class="source-select" aria-label="选择本地数据">${sourceOptions}</select>`:''}</div>
+        <div class="metric-grid"><div class="metric"><strong>${m.liked}</strong><span>喜欢歌曲</span></div><div class="metric"><strong>${m.unique}</strong><span>不同歌曲</span></div><div class="metric"><strong>${m.artists}</strong><span>歌手</span></div><div class="metric"><strong>${m.playlists}</strong><span>歌单</span></div></div>
+        <div class="insight-grid"><section class="card"><div class="eyebrow">TOP ARTISTS</div><h3>喜欢歌曲中常出现的歌手</h3><p>按喜欢歌曲中的出现次数统计。</p>${artists}</section><section class="card"><div class="eyebrow">TOP ALBUMS</div><h3>喜欢歌曲中常出现的专辑</h3><p>按喜欢歌曲中的出现次数统计。</p>${albums}</section></div>
+        <section class="card"><h3>歌单规模</h3><div class="playlist-facts"><span><strong>${m.created_playlists}</strong>自建</span><span><strong>${m.subscribed_playlists}</strong>收藏</span><span><strong>${m.largest_playlist}</strong>最大歌单的歌曲数</span></div></section>
+        ${compare}<section class="card" style="margin-top:17px"><h3>搜索本地音乐</h3><p>按歌曲、歌手或专辑查找；只浏览数据，不播放或下载音乐。</p><input id="music-search" class="search-box" type="search" placeholder="搜索歌曲 / 歌手 / 专辑" aria-label="搜索本地音乐"><div id="search-results" class="search-results" aria-live="polite"></div></section><div class="feature-grid" style="margin-top:17px"><section class="card"><div class="eyebrow">NEXT STEP</div><h3>让 AI 帮你继续理解</h3><p>选择一个方向，直接在程序里查看并复制完整 Prompt。</p>${button('探索 AI 分析','go-ai','small')}</section><section class="card"><div class="eyebrow">YOUR FILES</div><h3>数据保存在本机</h3><p>查看 JSON、摘要与分析指南；无需到文件夹里寻找提示词。</p>${button('查看导出文件','go-export','small')}</section></div>`;
+    }
+    function ai() {
+      if (!state.dashboard) return `${header('AI ANALYSIS','探索你的音乐世界','完成一次音乐整理后，分析方向会出现在这里。')}<div class="card empty"><p>还没有可供分析的本地数据。</p>${button('先整理音乐数据','explore','primary')}</div>`;
+      if (activeTopic) {
+        const t = activeTopic;
+        const scope = t.scope.split(/[、；]/).map(part=>part.trim()).filter(Boolean).map(part=>`<span>${esc(part)}</span>`).join('');
+        return `<div class="topic-detail"><button class="topic-back" data-action="ai-back">← 返回分析方向</button><div class="eyebrow">ANALYSIS ${String(t.number).padStart(2,'0')}</div><h2>${esc(t.title)}</h2><p class="lead">${esc(t.question)}</p>${t.reason?`<div class="toast">${esc(t.reason)}</div>`:''}<div class="section-head"><h3>AI 会分析</h3><p>具体结论由你选择的 AI 根据上传文件给出。</p></div><div class="scope-list">${scope}</div><div class="section-head"><h3>完整 Prompt</h3><p>这段文字可以独立使用，已包含数据范围与缺失说明。</p></div><textarea id="prompt-text" class="prompt-box" readonly aria-label="完整 AI Prompt">${esc(t.prompt)}</textarea><div class="copy-line">${button('复制 Prompt','copy-prompt','primary')}${button('打开数据文件夹','open-folder','small')}<span class="copy-ok" role="status">${copied?'✓ 已复制':''}</span></div><section class="card"><h3>怎么使用？</h3><ol class="steps"><li>打开 ChatGPT、Claude、Gemini，或其他支持文件上传的 AI。</li><li>上传 <strong>${esc(t.filename)}</strong>。</li><li>点击“复制 Prompt”。</li><li>把 Prompt 粘贴给 AI。</li><li>开始分析，并让 AI 指出对应的歌曲或歌单证据。</li></ol><p class="small-note">上传前，请确认你愿意把个人音乐数据交给所选 AI 服务。</p></section></div>`;
+      }
+      const routes = [
+        ['第一次使用','全景画像 → 真实音乐审美 → 核心歌手 → 音乐地图 → 系统听歌计划'],
+        ['只想娱乐看看','全景画像 → 年度总结 → 音乐谈资'],
+        ['认真培养品味','真实音乐审美 → 核心歌手 → 音乐地图 → 审美盲区 → 系统听歌计划']
+      ];
+      const cards = state.topics.map(t=>`<button class="topic-card" data-topic="${t.number}"><span class="topic-num">${String(t.number).padStart(2,'0')}</span><strong>${esc(t.title)}</strong><small>${esc(t.question)}</small>${t.reason?`<span class="topic-note">数据有限，点击查看说明</span>`:''}</button>`).join('');
+      return `${toast()}${header('AI ANALYSIS','探索你的音乐世界','请选择你感兴趣的方向。每个 Prompt 都能独立复制使用。')}<div class="route-grid">${routes.map(([title,description])=>`<div class="route-card"><h3>${title}</h3><p>${description}</p></div>`).join('')}</div><div class="section-head"><h3>分析方向</h3><p>Music Insight 负责整理数据和 Prompt；你自行选择 AI，无需 API Key。</p></div><div class="topic-grid">${cards}</div>`;
+    }
+    function exportPage() {
+      const rows=state.files.map((f,i)=>`<div class="file-row"><div class="file-glyph">${i===0?'AI':'MD'}</div><div><strong>${esc(f.name)}</strong><small>${esc(f.description)}</small></div></div>`).join('');
+      return `${toast()}${header('YOUR FILES','导出 AI 数据','文件只保存在你选择的本地文件夹中。你也可以直接在“AI 分析”中查看并复制 Prompt。')}${state.files.length ? `<div class="file-list">${rows}</div><p class="small-note">${esc(state.result_folder)}</p>${button('打开数据文件夹','open-folder','primary')}` : `<div class="card empty"><p>还没有导出文件。完成一次音乐整理后，这里会显示文件清单。</p>${button('选择音乐平台','explore','primary')}</div>`}`;
+    }
     function settings() { const s=state.settings; return `${toast()}${header('PREFERENCES','设置','让 Music Insight 按你喜欢的方式工作。')}<div class="settings-list"><section class="settings-row"><h3>输出位置</h3><p>导出的数据、摘要和 AI 指南会保存在这个文件夹。</p><div class="field-line"><input id="output-path" aria-label="输出路径" value="${esc(s.output_dir)}"><button class="btn small" data-action="choose-folder">选择</button><button class="btn small primary" data-action="save-folder">保存</button></div></section><section class="settings-row"><h3>外观主题</h3><p>选择阅读更舒适的界面颜色。</p><div class="option-row"><button class="btn small ${s.theme==='dark'?'active':''}" data-action="theme-dark">深色</button><button class="btn small ${s.theme==='light'?'active':''}" data-action="theme-light">浅色</button></div></section><section class="settings-row"><h3>数据与维护</h3><p>缓存只帮助下次继续获取；清除后会在下次重新读取。日志保存技术错误详情。</p><div class="option-row">${button('清除缓存','clear-cache','small')}${button('重新获取数据','fresh','small')}${button('打开日志目录','open-logs','small')}</div></section></div>`; }
     function errorPage() { const e=state.error || {title:'遇到问题',body:'请稍后重试。',detail:''}; return `${header('SOMETHING HAPPENED',esc(e.title),'整理没有完成；已有缓存仍在本机。')}<div class="flow-panel"><div class="error-accent">!</div><p>${esc(e.body)}</p><div class="flow-actions">${button('重试','retry','primary')}${button('返回选择','explore','ghost')}</div><details><summary>查看详细信息</summary><pre>${esc(e.detail)}</pre></details></div>`; }
     const pages = {home,platforms,login,connected,progress,music,ai,export:exportPage,settings,error:errorPage};
-    function render() { if (!state) return; document.documentElement.dataset.theme=state.settings.theme; document.getElementById('side-version').textContent=`VERSION ${state.version}`; document.getElementById('crumb').textContent=`MUSIC INSIGHT / ${labels[state.view] || '首页'}`; nav.innerHTML=navItems.map(([id,icon,label])=>`<button data-nav="${id}" class="${state.view===id?'active':''}" ${state.busy?'disabled':''}><span class="nav-icon" aria-hidden="true">${icon}</span>${label}</button>`).join(''); content.innerHTML=(pages[state.view] || home)(); const qr=document.getElementById('qr-image'); if(qr) qr.src=state.qr; }
-    async function poll() { if(!bridgeReady || polling) return; polling=true; try { const update=await window.pywebview.api.snapshot(revision); if(update.state) { revision=update.revision; state=update.state; render(); } } catch (error) { document.getElementById('crumb').textContent='MUSIC INSIGHT / 连接中'; } finally { polling=false; } }
-    async function invoke(name,...args) { try { const result=await window.pywebview.api[name](...args); if(result && result.ok===false && !result.cancelled && result.message) { alert(result.message); } await poll(); } catch(error) { alert('操作没有完成，请在日志中查看详情。'); } }
-    document.addEventListener('click',event=>{ const node=event.target.closest('[data-action],[data-nav]'); if(!node || !bridgeReady) return; if(node.dataset.nav) { invoke('navigate',node.dataset.nav); return; } const action=node.dataset.action; if(action==='explore'||action==='go-export') invoke('navigate',action==='explore'?'platforms':'export'); else if(action.startsWith('start-')) invoke('start',action.slice(6)); else if(action==='begin') invoke('begin_export'); else if(action==='refresh') invoke('refresh_qr'); else if(action==='cancel') invoke('cancel'); else if(action==='retry') invoke('start',state.selected); else if(action==='open-folder') invoke('open_result_folder'); else if(action==='open-logs') invoke('open_logs'); else if(action==='theme-dark'||action==='theme-light') invoke('set_theme',action.slice(6)); else if(action==='save-folder') invoke('set_output_dir',document.getElementById('output-path').value); else if(action==='choose-folder') invoke('choose_output_dir'); else if(action==='fresh') { if(state.selected) invoke('start',state.selected,true); else invoke('navigate','platforms'); } else if(action==='clear-cache') { if(confirm('清除近期缓存？已导出的文件不会删除。')) invoke('clear_cache'); } });
+    function render() {
+      if (!state) return;
+      if (lastFolder !== state.result_folder) { activeTopic=null; copied=false; lastFolder=state.result_folder; }
+      document.documentElement.dataset.theme=state.settings.theme;
+      document.getElementById('side-version').textContent=`VERSION ${state.version}`;
+      document.getElementById('crumb').textContent=`MUSIC INSIGHT / ${labels[state.view] || '首页'}`;
+      nav.innerHTML=navItems.map(([id,icon,label])=>`<button data-nav="${id}" class="${state.view===id?'active':''}" ${state.busy?'disabled':''}><span class="nav-icon" aria-hidden="true">${icon}</span>${label}</button>`).join('');
+      content.innerHTML=(pages[state.view] || home)();
+      const qr=document.getElementById('qr-image'); if(qr) qr.src=state.qr;
+    }
+    async function poll() {
+      if(!bridgeReady || polling) return;
+      polling=true;
+      try {
+        const update=await window.pywebview.api.snapshot(revision);
+        if(update.state) { revision=update.revision; state=update.state; render(); }
+      } catch(error) { document.getElementById('crumb').textContent='MUSIC INSIGHT / 连接中'; }
+      finally { polling=false; }
+    }
+    async function invoke(name,...args) {
+      try {
+        const result=await window.pywebview.api[name](...args);
+        if(result && result.ok===false && !result.cancelled && result.message) alert(result.message);
+        await poll();
+        return result;
+      } catch(error) { alert('操作没有完成，请在日志中查看详情。'); return {ok:false}; }
+    }
+    async function openTopic(number) {
+      const result=await invoke('get_topic',number);
+      if(result && result.ok) { activeTopic=result.topic; copied=false; render(); document.querySelector('.main').scrollTop=0; }
+    }
+    document.addEventListener('click',async event=>{
+      const node=event.target.closest('[data-action],[data-nav],[data-topic]');
+      if(!node || !bridgeReady) return;
+      if(node.dataset.nav) { activeTopic=null; invoke('navigate',node.dataset.nav); return; }
+      if(node.dataset.topic) { await openTopic(Number(node.dataset.topic)); return; }
+      const action=node.dataset.action;
+      if(action==='explore'||action==='go-export'||action==='go-ai') {
+        if(action==='go-ai') activeTopic=null;
+        invoke('navigate',action==='explore'?'platforms':action==='go-ai'?'ai':'export');
+      } else if(action.startsWith('start-')) invoke('start',action.slice(6));
+      else if(action==='begin') invoke('begin_export');
+      else if(action==='refresh') invoke('refresh_qr');
+      else if(action==='cancel') invoke('cancel');
+      else if(action==='retry') invoke('start',state.selected);
+      else if(action==='open-folder') invoke('open_result_folder');
+      else if(action==='open-logs') invoke('open_logs');
+      else if(action==='theme-dark'||action==='theme-light') invoke('set_theme',action.slice(6));
+      else if(action==='save-folder') invoke('set_output_dir',document.getElementById('output-path').value);
+      else if(action==='choose-folder') invoke('choose_output_dir');
+      else if(action==='fresh') { if(state.selected) invoke('start',state.selected,true); else invoke('navigate','platforms'); }
+      else if(action==='clear-cache') { if(confirm('清除近期缓存？已导出的文件不会删除。')) invoke('clear_cache'); }
+      else if(action==='ai-back') { activeTopic=null; copied=false; render(); }
+      else if(action==='copy-prompt' && activeTopic) {
+        const result=await invoke('copy_prompt',activeTopic.number);
+        if(result && result.ok) { copied=true; render(); }
+      }
+    });
+    document.addEventListener('change',event=>{
+      if(event.target.id==='source-select') {
+        activeTopic=null; copied=false;
+        invoke('select_source',Number(event.target.value));
+      }
+    });
+    document.addEventListener('input',event=>{
+      if(event.target.id!=='music-search' || !bridgeReady) return;
+      clearTimeout(searchTimer);
+      const input=event.target, query=input.value.trim(), holder=document.getElementById('search-results');
+      if(!query) { holder.innerHTML=''; return; }
+      searchTimer=setTimeout(async()=>{
+        try {
+          const result=await window.pywebview.api.search_catalog(query);
+          if(!holder.isConnected || input.value.trim()!==query) return;
+          const rows=result.results || [];
+          holder.innerHTML=rows.length ? rows.map(row=>`<div class="search-row"><span>${esc(row.name)}</span><span>${esc(row.artists)}${row.album?' · '+esc(row.album):''}</span></div>`).join('') : '<p class="small-note">没有找到匹配的本地歌曲。</p>';
+        } catch(error) { if(holder.isConnected) holder.innerHTML='<p class="small-note">搜索暂时不可用。</p>'; }
+      },180);
+    });
     window.addEventListener('pywebviewready',()=>{ bridgeReady=true; poll(); setInterval(poll,350); });
   </script>
 </body>

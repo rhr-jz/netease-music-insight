@@ -10,48 +10,16 @@ from threading import Event, RLock, Thread
 from .. import __version__
 from ..auth import LoginBack
 from ..errors import ExportCancelled, MusicInsightError
+from ..guidance import TOPICS, prompt_for
 from ..platform_utils import open_path
 from ..service import CancellationToken, MusicInsightService
 from ..utils import atomic_json, read_json
+from .clipboard import copy_text
+from .library import (dashboard_data, discover_exports, file_entries,
+                      read_export, source_entries, topic_cards)
 
 
 PROVIDERS = {"netease": "网易云音乐", "qq": "QQ 音乐", "all": "两个平台"}
-FILES = (
-    ("music_for_ai.json", "上传给 AI 的音乐数据"),
-    ("music_summary.md", "自己阅读的音乐摘要"),
-    ("AI_ANALYSIS_GUIDE.md", "可独立复制的 AI 分析提示词"),
-)
-COMBINED_FILES = (
-    ("music_for_ai_combined.json", "上传给 AI 的双平台联合数据"),
-    ("music_summary_combined.md", "两个平台的音乐摘要"),
-    ("AI_ANALYSIS_GUIDE.md", "可独立复制的 AI 分析提示词"),
-)
-
-
-def _artist_count(data, combined=False):
-    if combined:
-        songs = (source for group in data.get("matched_catalog", [])
-                 for source in group.get("sources", []))
-    else:
-        songs = iter(data.get("song_catalog", []))
-    return len({name.strip() for song in songs
-                for name in (song.get("artists") or "").split(" / ") if name.strip()})
-
-
-def _dashboard(data, combined=False):
-    if combined:
-        platforms = data["platforms"].values()
-        liked = sum(d["statistics"]["liked_song_count"] for d in platforms)
-        playlists = sum(d["statistics"]["playlist_count"] for d in data["platforms"].values())
-        unique = data["statistics"]["combined_unique_tracks"]
-    else:
-        stats = data["statistics"]
-        liked, playlists, unique = (stats["liked_song_count"], stats["playlist_count"],
-                                    stats["unique_song_count"])
-    return {"liked": liked, "playlists": playlists, "unique": unique,
-            "artists": _artist_count(data, combined=combined)}
-
-
 def _friendly_error(exc, provider):
     code = getattr(exc, "code", "export_failed")
     if code == "network_unavailable":
@@ -78,6 +46,8 @@ class DesktopBridge:
         self._thread = None
         self._begin = Event()
         self._refresh = Event()
+        self._data = None
+        self._records = []
         self._settings_file = self._root / ".state" / "desktop.json"
         saved = read_json(self._settings_file) or {}
         output_dir = saved.get("output_dir") if isinstance(saved, dict) else None
@@ -89,10 +59,13 @@ class DesktopBridge:
             "progress": {"liked": None, "playlists": None, "tracks_current": 0,
                          "tracks_total": 0, "history": None, "phase": ""},
             "dashboard": None, "files": [], "result_folder": None,
+            "sources": [], "source_id": None, "topics": [],
+            "data_filename": None,
             "error": None, "toast": "", "version": __version__,
             "settings": {"output_dir": str(Path(output_dir).expanduser()) if output_dir else str(self._root / "output"),
                          "theme": theme if theme in {"dark", "light"} else "dark"},
         }
+        self._restore_library()
 
     def _change(self, **values):
         with self._lock:
@@ -104,6 +77,116 @@ class DesktopBridge:
             if since == self._revision:
                 return {"revision": self._revision}
             return {"revision": self._revision, "state": copy.deepcopy(self._state)}
+
+    def _set_result(self, folder, data, *, view=None, toast=""):
+        folder = Path(folder)
+        combined = (data.get("export_meta") or {}).get("provider") == "combined"
+        # Fake and older combined exports can still be identified by their shape.
+        combined = combined or "platforms" in data
+        dashboard = dashboard_data(data, combined=combined)
+        topics = topic_cards(data, combined=combined)
+        records = discover_exports(self._state["settings"]["output_dir"])
+        source_id = next((record["id"] for record in records
+                          if record["path"].parent.resolve() == folder.resolve()), None)
+        with self._lock:
+            self._data = data
+            self._records = records
+            self._state.update(
+                dashboard=dashboard, topics=topics, sources=source_entries(records),
+                source_id=source_id, result_folder=str(folder),
+                data_filename=("music_for_ai_combined.json" if combined else "music_for_ai.json"),
+                files=file_entries(folder, combined), qr=None, busy=False,
+                message="你的音乐数据已经准备好了。", toast=toast,
+            )
+            if view:
+                self._state["view"] = view
+            self._revision += 1
+
+    def _restore_library(self):
+        records = discover_exports(self._state["settings"]["output_dir"])
+        for record in records:
+            data = read_export(record)
+            if data is None:
+                continue
+            try:
+                self._set_result(record["path"].parent, data)
+                return
+            except (KeyError, TypeError, ValueError):
+                logging.exception("invalid saved music export")
+        with self._lock:
+            self._data = None
+            self._records = records
+            self._state.update(dashboard=None, topics=[], files=[], result_folder=None,
+                               sources=source_entries(records), source_id=None,
+                               data_filename=None)
+            self._revision += 1
+
+    def select_source(self, source_id):
+        with self._lock:
+            if self._state["busy"]:
+                return {"ok": False, "message": "请先完成当前任务。"}
+            record = next((item for item in self._records if item["id"] == source_id), None)
+        if record is None:
+            return {"ok": False, "message": "没有找到这份本地数据。"}
+        data = read_export(record)
+        if data is None:
+            return {"ok": False, "message": "这份数据文件无法读取，请重新整理音乐。"}
+        try:
+            self._set_result(record["path"].parent, data, view="music")
+        except (KeyError, TypeError, ValueError):
+            logging.exception("invalid selected music export")
+            return {"ok": False, "message": "这份数据文件格式不完整。"}
+        return {"ok": True}
+
+    def get_topic(self, number):
+        with self._lock:
+            data = self._data
+            cards = self._state["topics"]
+            filename = self._state["data_filename"]
+        if data is None:
+            return {"ok": False, "message": "请先整理或选择一份音乐数据。"}
+        card = next((item for item in cards if item["number"] == number), None)
+        topic = next((item for item in TOPICS if item.number == number), None)
+        if card is None or topic is None:
+            return {"ok": False, "message": "没有找到这个分析方向。"}
+        return {"ok": True, "topic": {**card, "prompt": prompt_for(
+            topic, combined=filename == "music_for_ai_combined.json", data=data),
+            "filename": filename}}
+
+    def copy_prompt(self, number):
+        result = self.get_topic(number)
+        if not result["ok"]:
+            return result
+        try:
+            copy_text(result["topic"]["prompt"])
+        except (OSError, ValueError):
+            logging.exception("desktop prompt clipboard failed")
+            return {"ok": False, "message": "复制失败，请稍后重试；也可以手动选择上方文字。"}
+        return {"ok": True, "message": "✓ 已复制"}
+
+    def search_catalog(self, query):
+        with self._lock:
+            data = self._data
+        if data is None or not isinstance(query, str):
+            return {"ok": True, "results": []}
+        needle = query.strip().casefold()[:80]
+        if not needle:
+            return {"ok": True, "results": []}
+        if "platforms" in data:
+            songs = (group["sources"][0] for group in data.get("matched_catalog", [])
+                     if group.get("sources"))
+        else:
+            songs = iter(data.get("song_catalog", []))
+        results = []
+        for song in songs:
+            name = str(song.get("name") or "")
+            artists = str(song.get("artists") or "")
+            album = str(song.get("album") or "")
+            if needle in f"{name} {artists} {album}".casefold():
+                results.append({"name": name, "artists": artists, "album": album})
+                if len(results) == 30:
+                    break
+        return {"ok": True, "results": results}
 
     def navigate(self, view):
         if view not in {"home", "platforms", "music", "ai", "export", "settings"}:
@@ -265,13 +348,7 @@ class DesktopBridge:
             else:
                 folder, data = results[selected]
             self._token.check()
-            combined = selected == "all"
-            names = COMBINED_FILES if combined else FILES
-            files = [{"name": name, "description": description, "path": str(folder / name)}
-                     for name, description in names if (folder / name).is_file()]
-            self._change(view="music", busy=False, dashboard=_dashboard(data, combined),
-                         files=files, result_folder=str(folder), qr=None,
-                         message="你的音乐数据已经准备好了。", toast="整理完成。")
+            self._set_result(folder, data, view="music", toast="整理完成。")
         except (ExportCancelled, LoginBack):
             self._change(view="platforms", busy=False, qr=None, login_status="",
                          toast="已取消；已有缓存会保留，下次可以继续。", message="")
@@ -316,6 +393,7 @@ class DesktopBridge:
             self._state["settings"]["output_dir"] = str(path)
             self._revision += 1
         self._save_settings()
+        self._restore_library()
         return {"ok": True}
 
     def choose_output_dir(self):
