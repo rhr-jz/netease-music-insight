@@ -466,7 +466,10 @@ class DesktopBridge:
     def copy_guide(self):
         result = self.get_guide()
         if result.get("ok"):
-            copy_text(result["text"])
+            try:
+                copy_text(result["text"])
+            except (OSError, ValueError):
+                return {"ok": False, "message": "复制失败，请稍后重试。"}
         return result
 
     def prepare_archive(self):

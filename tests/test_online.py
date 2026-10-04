@@ -275,6 +275,19 @@ class OnlineTests(unittest.TestCase):
         limiter.allow('b',1);limiter.allow('c',1)
         self.assertEqual(len(limiter._buckets),2)
 
+    def test_cleanup_retries_and_does_not_break_expiry(self):
+        self.run_job()
+        root=self.session().bridge._storage.root
+        import shutil
+        with patch('netease_music_insight.online.storage.shutil.rmtree',side_effect=PermissionError('synthetic file lease')):
+            with self.assertLogs('music_insight.online',level='WARNING'):
+                self.assertEqual(self.post('/api/logout').status_code,200)
+            self.assertTrue(root.exists())
+            self.assertEqual(self.client.get('/api/snapshot').status_code,401)
+        self.app.state.sessions.reap()
+        self.assertFalse(root.exists())
+        self.assertEqual(self.app.state.sessions._retired,[])
+
 
 if __name__=='__main__':
     unittest.main()

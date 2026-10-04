@@ -2,7 +2,6 @@
 import json
 import logging
 import secrets
-import sys
 import threading
 import webbrowser
 from http import HTTPStatus

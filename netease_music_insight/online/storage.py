@@ -3,6 +3,7 @@ import mimetypes
 import secrets
 import shutil
 import tempfile
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from threading import RLock
@@ -94,4 +95,9 @@ class LocalTemporaryStorage(StorageBackend):
         self.revoke()
         # The root is created here, never derived from a cookie or request path.
         if self.root.exists() and not self.root.is_symlink():
-            shutil.rmtree(self.root)
+            try:
+                shutil.rmtree(self.root)
+            except OSError as exc:
+                logging.getLogger("music_insight.online").warning("cleanup stage=retry error_type=%s", type(exc).__name__)
+                return False
+        return not self.root.exists()

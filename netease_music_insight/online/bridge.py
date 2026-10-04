@@ -30,6 +30,7 @@ class OnlineBridge(DesktopBridge):
             *a, api_context=prepared_context(settings.netease_api_dir, kw.get("cancellation")), **kw))
         super().__init__(storage.root, service_factory=factory)
         self._state["mode"] = "online"
+        self._state["retention"] = {"session_ttl": settings.session_ttl, "result_ttl": settings.result_ttl}
         self._state["settings"] = {"theme": "system", "output_dir": "会话临时目录"}
 
     def _restore_library(self):
@@ -188,6 +189,8 @@ class OnlineBridge(DesktopBridge):
                        "detail": "错误类别：" + getattr(exc, "code", "provider_unavailable")}, message="")
         finally:
             # Provider finally blocks discard credentials before leaving the worker.
+            if self._finished_at is None and self._datasets:
+                self._finished_at = self._clock()
             self._jobs.release()
             if self._revoked:
                 self._storage.close()

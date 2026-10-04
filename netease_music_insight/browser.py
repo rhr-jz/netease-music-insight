@@ -272,4 +272,3 @@ class BrowserSession:
         self.commit()
         self._demo = True
         return self.snapshot()
-

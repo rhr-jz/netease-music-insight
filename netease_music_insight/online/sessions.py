@@ -22,6 +22,7 @@ class SessionManager:
     def __init__(self, settings, jobs, service_factory=None, clock=time.monotonic):
         self.settings, self.jobs, self.service_factory, self.clock = settings, jobs, service_factory, clock
         self._sessions = {}
+        self._retired = []
         self._lock = RLock()
 
     def create(self):
@@ -51,23 +52,47 @@ class SessionManager:
                 self._sessions.pop(session_id)
             else:
                 return session
-        session.bridge.dispose()
+        self._dispose(session)
         return None
 
     def drop(self, session_id):
         with self._lock:
             session = self._sessions.pop(session_id, None)
         if session:
-            session.bridge.dispose()
+            self._dispose(session)
+
+    def _dispose(self, session):
+        session.bridge.dispose()
+        with self._lock:
+            self._retired.append(session.bridge)
+
+    def _reap_retired(self):
+        with self._lock:
+            retired = list(self._retired)
+        for bridge in retired:
+            thread = bridge._thread
+            if thread and thread.is_alive():
+                continue
+            if bridge._storage.close():
+                with self._lock:
+                    if bridge in self._retired:
+                        self._retired.remove(bridge)
 
     def reap(self):
         with self._lock:
             identifiers = list(self._sessions)
         for identifier in identifiers:
             self.get(identifier)
+        self._reap_retired()
 
     def close(self):
         with self._lock:
             identifiers = list(self._sessions)
         for identifier in identifiers:
             self.drop(identifier)
+        with self._lock:
+            retired = list(self._retired)
+        for bridge in retired:
+            if bridge._thread and bridge._thread.is_alive():
+                bridge._thread.join(timeout=2)
+        self._reap_retired()

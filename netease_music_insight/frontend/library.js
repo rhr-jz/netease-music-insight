@@ -54,6 +54,6 @@ document.addEventListener('click',async event=>{
   else if(action==='save-qr'&&state.qr){downloadBlob(state.qr,'music-insight-qr.png');}
   else if(action==='download-all'){const result=await invoke('prepare_archive');if(result.ok)downloadBlob(API.fileURL(result.name,state),result.name);}
   else if(action==='download-prompt'&&activeTopic){const url=URL.createObjectURL(new Blob([activeTopic.prompt],{type:'text/markdown;charset=utf-8'}));downloadBlob(url,'music-insight-prompt-'+activeTopic.number+'.md');setTimeout(()=>URL.revokeObjectURL(url),1000);}
-  else if(action==='copy-guide'){const result=await invoke('get_guide');if(result.ok){if(isWeb){await navigator.clipboard.writeText(result.text);state.toast='✓ 已复制完整 AI 使用说明';render();}else{await invoke('copy_guide');}}}
+  else if(action==='copy-guide'){const result=await invoke('get_guide');if(result.ok){if(isWeb){try{await navigator.clipboard.writeText(result.text);state.toast='✓ 已复制完整 AI 使用说明';render();}catch(e){alert('复制失败，请在导出页面下载 AI_ANALYSIS_GUIDE.md。');}}else{await invoke('copy_guide');}}}
 });
 function downloadBlob(url,name){const a=document.createElement('a');a.href=url;a.download=name;a.click();}

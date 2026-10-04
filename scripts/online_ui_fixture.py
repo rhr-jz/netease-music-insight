@@ -21,7 +21,7 @@ class SlowNetEase(MockNetEase):
         original=self.present
         def present(*args):
             result=original(*args)
-            time.sleep(1)
+            time.sleep(2)
             return result
         self.present=present
         return super().login()
@@ -30,7 +30,7 @@ class SlowQQ(MockQQ):
         original=self.present
         def present(*args):
             result=original(*args)
-            time.sleep(1)
+            time.sleep(2)
             return result
         self.present=present
         return await super().login()
