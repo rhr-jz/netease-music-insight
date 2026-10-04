@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; font-src 'none'; connect-src 'none'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none';">
+  <meta name="description" content="在浏览器里查看音乐数据、探索 AI 分析方向。音乐文件只在本机处理，无需上传。">
+  <meta name="theme-color" content="#101426">
+  <title>Music Insight · 听见自己</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <a href="#main" class="skip">跳到页面内容</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#home"><span class="brand-mark" aria-hidden="true"></span>Music Insight</a>
+      <div class="side-label">YOUR MUSIC, YOUR WORLD</div>
+      <nav id="navigation" aria-label="主导航"></nav>
+      <div class="sidebar-footer"><span class="tiny-dot"></span>音乐文件只在本机处理<br><span id="offline-status">浏览器预览版</span></div>
+    </aside>
+    <main id="main" tabindex="-1">
+      <header class="topbar"><span id="breadcrumb">MUSIC INSIGHT / 首页</span><button class="privacy-pill" data-view="privacy"><span class="tiny-dot"></span>不上传音乐文件</button></header>
+      <div id="page" class="page"></div>
+      <footer class="page-footer">Listen. Understand. Discover.<span>Music Insight · 浏览器预览</span></footer>
+    </main>
+  </div>
+  <input id="files" type="file" accept=".json,application/json" multiple hidden aria-label="选择本地音乐数据文件">
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <div id="busy" class="busy" role="status" aria-live="polite" hidden><span class="spinner" aria-hidden="true"></span><span id="busy-text">正在准备…</span><button id="cancel-import" class="text-button" hidden>取消导入</button></div>
+  <noscript><p>此网页需要启用 JavaScript，才能在本机读取音乐文件并运行分析工具。</p></noscript>
+</body>
+</html>

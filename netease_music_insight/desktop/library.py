@@ -134,6 +134,10 @@ def dashboard_data(data, *, combined=False):
         "liked": sum(stat.get("liked_song_count", 0) for stat in stats),
         "playlists": sum(stat.get("playlist_count", 0) for stat in stats),
         "unique": unique, "artists": len(artists),
+        "albums": len({song.get("album") for song in catalog if song.get("album")}),
+        "history": sum(len(platform.get("play_history", [])) for platform in platforms),
+        "coverage": [str(issue.get("type", "数据缺口")) if isinstance(issue, dict) else "数据缺口"
+                     for platform in platforms for issue in platform.get("export_meta", {}).get("issues", [])],
         "top_artists": [{"name": name, "count": count}
                         for name, count in artist_counts.most_common(6)],
         "top_albums": [{"name": name, "count": count}

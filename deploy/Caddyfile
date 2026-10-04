@@ -1,0 +1,7 @@
+# Run Caddy on the host or adapt upstream to the Compose service name.
+music.example.com {
+    reverse_proxy 127.0.0.1:8000 {
+        flush_interval -1
+    }
+    # Access logging deliberately disabled: never persist private URL paths.
+}

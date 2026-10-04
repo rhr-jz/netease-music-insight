@@ -1,0 +1,63 @@
+name: Online Web and Docker
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  online:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: browser/package-lock.json
+      - run: python -m pip install -r requirements-test.txt
+      - run: python -m unittest discover -s tests -v
+      - run: python run_desktop.py --smoke
+      - run: python run_web.py --smoke
+      - run: python run_online.py --smoke
+      - run: npm ci --prefix browser --ignore-scripts --no-audit --no-fund
+      - run: npx --prefix browser playwright install --with-deps chromium
+      - name: Shared UI browser checks
+        shell: bash
+        run: |
+          python scripts/online_ui_fixture.py 58003 > /tmp/online-fixture.log 2>&1 &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid"' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:58003/health > /dev/null; then break; fi
+            sleep 1
+          done
+          node browser/tests/online.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: online-synthetic-screenshots
+          path: build/online/screenshots/
+          retention-days: 7
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build prepared runtime
+        run: docker build -t music-insight-online:test .
+      - name: Start production container and verify security boundary
+        shell: bash
+        run: |
+          docker run -d --name insight --read-only --tmpfs /tmp:uid=10001,gid=10001,mode=0700,size=1g --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8000:8000 -e MUSIC_INSIGHT_PUBLIC_URL=https://music.example.com -e MUSIC_INSIGHT_SECRET=ci-only-synthetic-secret-32-characters music-insight-online:test
+          trap 'docker logs insight; docker rm -f insight' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent -H 'Host: music.example.com' http://127.0.0.1:8000/health > /tmp/health.json; then break; fi
+            sleep 1
+          done
+          python -c "import json; d=json.load(open('/tmp/health.json')); assert d['netease_provider']==d['qq_provider']=='ready',d"
+          docker exec insight python -m netease_music_insight.online.healthcheck
+          docker exec insight python -m netease_music_insight.online.runtimecheck
+          curl --fail --silent -H 'Host: music.example.com' http://127.0.0.1:8000/ > /dev/null
+          test "$(curl --silent -o /dev/null -w '%{http_code}' -H 'Host: attacker.invalid' http://127.0.0.1:8000/health)" = 403

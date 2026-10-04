@@ -2,6 +2,12 @@
 
 Export your NetEase Cloud Music or QQ Music account metadata and turn it into an AI-ready personal music profile.
 
+## Choose an edition
+
+- **Online Web:** a deployable FastAPI/Docker edition with QR login, isolated temporary sessions, dashboards, paged library, AI prompts and ZIP exports. Account credentials and metadata temporarily pass through the deployment server. No official live URL is claimed. See [Online Web](docs/ONLINE_WEB.md) and [deployment](docs/DEPLOYMENT.md).
+- **Desktop / Local Web:** run on your own computer and retain local results for offline use.
+- **CLI:** remains available for advanced workflows.
+
 ![Music Insight home screen using synthetic data](assets/screenshots/home.png)
 
 On Windows 10/11, download a GUI version of the portable ZIP from [Releases](https://github.com/rhr-jz/netease-music-insight/releases), extract it, and run `MusicInsight.exe`. Choose a platform and scan the QR code inside the window; older releases still use the CLI. The GUI needs Microsoft Edge WebView2 Runtime. Alternatively, install Python 3.10+, download this repository, and run `python run_desktop.py` after installing `requirements-desktop.txt`; `python run.py` remains the CLI. If security software reports a threat, do not bypass the block; see [download security](SECURITY.md).
@@ -18,4 +24,4 @@ The Windows desktop app restores previous exports offline, shows factual Dashboa
 
 **NetEase playback records are limited by what its service returns; QQ playback history has no verified reliable endpoint and is marked unavailable.** Collection and playlist timestamps are included only when the API actually returns a usable value. QQ's favorite-playlist order time is labeled separately because it may differ from the original subscription date. The exporter records inaccessible playlists and other gaps in `export_meta.issues`.
 
-Your music data stays on your computer by default. QR credentials live only in memory during the session. This independent project uses unofficial interfaces that can change. QQ support uses [QQMusicApi](https://github.com/L-1124/QQMusicApi) (GPL-3.0-or-later); see [licenses](THIRD_PARTY_LICENSES.md), [privacy](PRIVACY.md), [data format](docs/DATA_FORMAT.md), and [FAQ](docs/FAQ.md).
+In Desktop, Local Web and CLI, music data stays on your computer. Online Web temporarily processes it on the server and deletes it on logout or expiry; it does not automatically send data to AI. QR credentials live only in memory during the session. This independent project uses unofficial interfaces that can change. QQ support uses [QQMusicApi](https://github.com/L-1124/QQMusicApi) (GPL-3.0-or-later); see [licenses](THIRD_PARTY_LICENSES.md), [privacy](PRIVACY.md), [data format](docs/DATA_FORMAT.md), and [FAQ](docs/FAQ.md).

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netease-music-insight"
-version = "2.0.0"
+version = "3.0.0.dev0"
 description = "Export NetEase and QQ Music account data for AI analysis"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,9 +16,15 @@ dependencies = ["requests>=2.31,<3", "qrcode[pil]>=8,<9", "qqmusic-api-python==0
 netease-music-insight = "netease_music_insight.cli:main"
 music-insight = "netease_music_insight.cli:main"
 music-insight-web = "netease_music_insight.web.app:main"
+music-insight-online = "netease_music_insight.online.app:main"
+
+[project.optional-dependencies]
+online = ["fastapi==0.142.2", "uvicorn==0.54.0"]
+test = ["httpx==0.28.1"]
+desktop = ["pywebview==6.2.1"]
 
 [tool.setuptools.packages.find]
 include = ["netease_music_insight*"]
 
 [tool.setuptools.package-data]
-"netease_music_insight.desktop" = ["assets/index.html"]
+"netease_music_insight.frontend" = ["*.html", "*.css", "*.js"]

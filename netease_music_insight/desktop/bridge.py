@@ -64,7 +64,7 @@ class DesktopBridge:
             "data_filename": None,
             "error": None, "toast": "", "version": __version__,
             "settings": {"output_dir": str(Path(output_dir).expanduser()) if output_dir else str(self._root / "output"),
-                         "theme": theme if theme in {"dark", "light"} else "dark"},
+                         "theme": theme if theme in {"dark", "light", "system"} else "dark"},
         }
         self._restore_library()
 
@@ -190,7 +190,7 @@ class DesktopBridge:
         return {"ok": True, "results": results}
 
     def navigate(self, view):
-        if view not in {"home", "platforms", "music", "ai", "export", "settings"}:
+        if view not in {"home", "platforms", "music", "library", "cross", "ai", "export", "settings", "privacy"}:
             return {"ok": False}
         with self._lock:
             if self._state["busy"]:
@@ -388,7 +388,7 @@ class DesktopBridge:
         return {"ok": True}
 
     def set_theme(self, theme):
-        if theme not in {"dark", "light"}:
+        if theme not in {"dark", "light", "system"}:
             return {"ok": False}
         with self._lock:
             self._state["settings"]["theme"] = theme
@@ -444,6 +444,50 @@ class DesktopBridge:
         with self._lock:
             settings = self._state["settings"].copy()
         atomic_json(self._settings_file, settings)
+
+    def browse_library(self, kind="catalog", query="", page=1, playlist_id=None):
+        from ..library import browse
+        with self._lock:
+            data = self._data
+        return browse(data, kind, query, page, playlist_id)
+
+    def get_comparison(self):
+        from ..combined import comparison_data
+        with self._lock:
+            data = self._data
+        return {"ok": True, "comparison": comparison_data(data)}
+
+    def get_guide(self):
+        from ..library import usage_guide
+        with self._lock:
+            data = self._data
+        return usage_guide(data)
+
+    def copy_guide(self):
+        result = self.get_guide()
+        if result.get("ok"):
+            copy_text(result["text"])
+        return result
+
+    def prepare_archive(self):
+        from zipfile import ZipFile, ZIP_DEFLATED
+        from ..guidance import TOPICS
+        with self._lock:
+            if not self._data or not self._state["result_folder"]:
+                return {"ok": False, "message": "请先整理音乐。"}
+            root = Path(self._state["result_folder"]).resolve()
+        names = {entry["name"] for entry in self._state["files"] if not entry["name"].endswith(".zip")}
+        names.update("prompts/" + topic.filename for topic in TOPICS)
+        with ZipFile(root / "music-insight-export.zip", "w", compression=ZIP_DEFLATED) as archive:
+            for name in sorted(names):
+                path = (root / name).resolve()
+                if path.is_relative_to(root) and path.is_file():
+                    archive.write(path, name)
+        with self._lock:
+            if not any(f["name"] == "music-insight-export.zip" for f in self._state["files"]):
+                self._state["files"].append({"name": "music-insight-export.zip", "description": "全部 AI 文件", "path": str(root / "music-insight-export.zip")})
+                self._revision += 1
+        return {"ok": True, "name": "music-insight-export.zip"}
 
     def on_closing(self):
         with self._lock:

@@ -1,0 +1,42 @@
+name: Browser preview build
+
+# Publication scope is not settled. This workflow builds a reviewable artifact
+# only; it does not enable Pages or deploy a public site.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: browser/package-lock.json
+      - name: Test browser Core adapter
+        run: python -m unittest discover -s tests -p test_browser.py -v
+      - name: Build allowlisted static site
+        run: python scripts/build_browser.py
+      - name: Install browser test tools
+        run: npm ci --prefix browser --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        working-directory: browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify browser features and privacy boundaries
+        run: node browser/tests/smoke.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: music-insight-browser-preview
+          path: _site/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

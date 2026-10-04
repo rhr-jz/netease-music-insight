@@ -7,6 +7,7 @@ from pathlib import Path
 from .. import __version__
 from ..diagnostics import configure_error_logging
 from .bridge import DesktopBridge
+from ..frontend import ASSETS, document
 
 
 def app_root():
@@ -16,9 +17,7 @@ def app_root():
 
 
 def html_path():
-    if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS) / "netease_music_insight" / "desktop" / "assets" / "index.html"
-    return Path(__file__).resolve().parent / "assets" / "index.html"
+    return ASSETS / "index.html"
 
 
 def _configure_logging(root):
@@ -58,7 +57,7 @@ def main(argv=None):
         import webview
         bridge = DesktopBridge(root)
         window = webview.create_window(
-            "Music Insight", html=path.read_text(encoding="utf-8"), js_api=bridge,
+            "Music Insight", html=document(inline=True), js_api=bridge,
             width=1180, height=780, min_size=(1024, 700), resizable=True,
             background_color="#10152C", text_select=True, zoomable=True)
         bridge._window = window

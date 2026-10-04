@@ -18,7 +18,7 @@ def _timestamp(value):
 
 
 class ExportService:
-    def __init__(self, api, root: Path, notify=None, *, fresh=False, output_dir=None):
+    def __init__(self, api, root: Path, notify=None, *, fresh=False, output_dir=None, check_cancel=None):
         self.api = api
         self.root = root
         self.output_dir = Path(output_dir) if output_dir is not None else root / "output"
@@ -26,19 +26,23 @@ class ExportService:
         self.fresh = fresh
         self.issues = []
         self.index_incomplete = False
+        self.check_cancel = check_cancel or (lambda: None)
 
     def _cached(self, path, fetch):
+        self.check_cancel()
         if not self.fresh and path.exists() and time.time() - path.stat().st_mtime < 86400:
             data = read_json(path)
             if data is not None:
                 return data
         data = fetch()
+        self.check_cancel()
         atomic_json(path, data)
         return data
 
     def _song_details(self, ids):
         rows = []
         for start in range(0, len(ids), 300):
+            self.check_cancel()
             block = ids[start:start + 300]
             try:
                 data = self.api.get("/song/detail", {"ids": ",".join(map(str, block))}, timeout=60)
@@ -54,6 +58,7 @@ class ExportService:
     def _playlist_index(self, uid):
         playlists, offset = [], 0
         while True:
+            self.check_cancel()
             try:
                 data = self.api.get("/user/playlist", {"uid": uid, "limit": 100, "offset": offset}, timeout=60)
             except ApiError as exc:
@@ -74,11 +79,13 @@ class ExportService:
     def _tracks(self, playlist):
         rows, offset, limit = [], 0, 500
         while True:
+            self.check_cancel()
             data = self.api.get("/playlist/track/all", {"id": playlist["id"], "limit": limit, "offset": offset}, timeout=60)
             batch = data.get("songs")
             if not isinstance(batch, list):
                 raise ApiError("歌单歌曲格式异常。")
             rows.extend(filter(None, (song_row(song) for song in batch)))
+            self.notify(f"歌单歌曲分页 {len(rows)}/{playlist.get('trackCount') or len(rows)}")
             if len(batch) < limit:
                 break
             offset += limit
@@ -87,8 +94,8 @@ class ExportService:
     def run(self, profile):
         uid = profile["userId"]
         nickname = profile.get("nickname") or "网易云用户"
-        folder = self.output_dir / f"{safe_name(nickname)}_{uid}"
-        cache = self.root / ".cache" / str(uid)
+        folder = self.output_dir / f"{safe_name(nickname)}_{safe_name(uid)}"
+        cache = self.root / ".cache" / safe_name(uid)
         cache.mkdir(parents=True, exist_ok=True)
         folder.mkdir(parents=True, exist_ok=True)
         self.notify(f"账号：{nickname}（UID {uid}）")
@@ -127,13 +134,14 @@ class ExportService:
         for song in liked:
             song["liked_at"] = liked_times.get(str(song["id"]))
         for n, item in enumerate(index, 1):
+            self.check_cancel()
             pid = item.get("id")
             if not pid:
                 self.issues.append("遇到缺少 ID 的歌单，已跳过。")
                 continue
             name = item.get("name") or str(pid)
             try:
-                tracks = self._cached(cache / "playlists" / f"{pid}.json", lambda item=item: self._tracks(item))
+                tracks = self._cached(cache / "playlists" / f"{safe_name(pid)}.json", lambda item=item: self._tracks(item))
             except LoginExpired:
                 raise
             except ApiError as exc:
@@ -155,8 +163,7 @@ class ExportService:
                 "track_count": count,
                 "tracks": tracks,
             })
-            if n == len(index) or n % 10 == 0:
-                self.notify(f"✓ 歌单进度 {n}/{len(index)}")
+            self.notify(f"✓ 歌单进度 {n}/{len(index)}")
 
         self.notify("[3/4] 获取可用播放记录……")
         try:
@@ -175,6 +182,7 @@ class ExportService:
                           expected_liked=len(liked_ids), expected_playlists=len(index))
         data["data_availability"] = {"play_history": {"available": history_available,
             "reason": None if history_available else "网易云本次未返回可用播放记录。"}}
+        self.check_cancel()
         write_reports(folder, data)
         raw = folder / "raw"
         atomic_json(raw / "liked_ids.json", liked_ids)

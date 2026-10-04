@@ -114,7 +114,7 @@ class QQMusicProvider(MusicProvider):
     async def _request(self, request, label):
         for attempt in range(3):
             try:
-                result = await asyncio.wait_for(request, timeout=60)
+                result = await self._await(request, timeout=60)
                 if self.check_cancel:
                     self.check_cancel()
                 return result
@@ -127,6 +127,26 @@ class QQMusicProvider(MusicProvider):
                     self.check_cancel()
                 await asyncio.sleep(1.5 * (attempt + 1))
 
+    async def _await(self, request, timeout=60):
+        """Check cancellation while a request or QR poll is waiting."""
+        pending = asyncio.ensure_future(request)
+        deadline = asyncio.get_running_loop().time() + timeout
+        try:
+            while not pending.done():
+                if self.check_cancel:
+                    self.check_cancel()
+                remaining = deadline - asyncio.get_running_loop().time()
+                if remaining <= 0:
+                    raise TimeoutError()
+                await asyncio.wait({pending}, timeout=min(0.2, remaining))
+            if self.check_cancel:
+                self.check_cancel()
+            return pending.result()
+        finally:
+            if not pending.done():
+                pending.cancel()
+                await asyncio.gather(pending, return_exceptions=True)
+
     async def login(self):
         from qqmusic_api.models.login import QRLoginType, QRCodeLoginEvents
         from qqmusic_api.modules.login_utils import QRCodeLoginSession
@@ -136,14 +156,19 @@ class QQMusicProvider(MusicProvider):
             session = QRCodeLoginSession(self.client.login, QRLoginType.MOBILE,
                                          interval=1.5, timeout_seconds=180)
             try:
-                qr = await asyncio.wait_for(session.get_qrcode(), 60)
+                qr = await self._await(session.get_qrcode())
                 with tempfile.TemporaryDirectory() as temp:
                     path = qr.save(Path(temp))
                     if path and self.present_qr and self.present_qr(path):
                         self.notify(f"请使用 QQ 音乐 App 扫描二维码：{path}")
                     else:
                         self.notify(f"二维码窗口未能打开，请手动打开图片：{path}")
-                    async for result in session.iter_events():
+                    events = session.iter_events().__aiter__()
+                    while True:
+                        try:
+                            result = await self._await(events.__anext__(), timeout=190)
+                        except StopAsyncIteration:
+                            break
                         if self.check_cancel:
                             self.check_cancel()
                         if result.event == QRCodeLoginEvents.SCAN:
@@ -184,6 +209,8 @@ class QQMusicProvider(MusicProvider):
     async def _pages(self, factory, label, field):
         rows, expected, page = [], None, 1
         while True:
+            if self.check_cancel:
+                self.check_cancel()
             response = _dict(await self._request(factory(page), label))
             batch = response.get(field)
             if batch is None and field == "songs":
@@ -192,6 +219,7 @@ class QQMusicProvider(MusicProvider):
                 raise ApiError(f"{label}返回格式异常。")
             expected = response.get("total", response.get("total_song_num", expected))
             rows.extend(batch)
+            self.notify(f"{label}分页 {len(rows)}/{expected or len(rows)}")
             has_more = bool(response.get("hasmore"))
             if not batch or (not has_more and (expected is None or len(rows) >= int(expected))):
                 break
@@ -213,6 +241,8 @@ class QQMusicProvider(MusicProvider):
 
     def _cache(self, path, fetch):
         async def run():
+            if self.check_cancel:
+                self.check_cancel()
             if not self.fresh and path.exists():
                 import time
                 if time.time() - path.stat().st_mtime < 86400:
@@ -220,6 +250,8 @@ class QQMusicProvider(MusicProvider):
                     if cached is not None:
                         return cached
             data = await fetch()
+            if self.check_cancel:
+                self.check_cancel()
             atomic_json(path, data)
             return data
         return run()
@@ -269,14 +301,15 @@ class QQMusicProvider(MusicProvider):
         self.notify(f"✓ 自建歌单：{sum(v['created_by_user'] for v in index)}；收藏歌单：{sum(v['subscribed'] for v in index)}")
         playlists = []
         for n, item in enumerate(index, 1):
+            if self.check_cancel:
+                self.check_cancel()
             try:
                 tracks = await self._cache(cache / "playlists" / f"{safe_name(item['id'])}.json",
                                            lambda item=item: self._tracks(item))
                 playlists.append({**item, "tracks": tracks})
             except ApiError as exc:
                 self.issues.append(f"歌单《{item['name']}》无法读取：{exc}")
-            if n % 10 == 0 or n == len(index):
-                self.notify(f"歌单进度：{n}/{len(index)}")
+            self.notify(f"歌单进度：{n}/{len(index)}")
         self.notify("[3/4] 整理数据……")
         public_profile = {"userId": uid, "nickname": profile["nickname"], "avatar": profile.get("avatar") or ""}
         data = build_data(public_profile, liked, playlists, [], self.issues,
@@ -285,6 +318,8 @@ class QQMusicProvider(MusicProvider):
         data["data_availability"] = {"play_history": {"available": False,
             "reason": "QQ Music currently does not provide a verified reliable play history endpoint."}}
         self.notify("[4/4] 写入 AI 文件……")
+        if self.check_cancel:
+            self.check_cancel()
         write_reports(folder, data)
         self.notify(f"数据检查：我喜欢 {len(liked)}/{liked_expected}；歌单 {len(playlists)}/{len(index)}；"
                     f"歌曲位置 {data['statistics']['playlist_song_positions']}；问题 {len(self.issues)} 项")
@@ -295,3 +330,6 @@ class QQMusicProvider(MusicProvider):
             await self.client.close()
         finally:
             self.client.credential = None
+
+    def drop_credentials(self):
+        self.client.credential = None

@@ -36,10 +36,23 @@ python run_web.py --smoke
 
 ## 修改位置
 
+独立的静态浏览器预览位于 `browser/`，构建、功能范围和隐私边界见 [BROWSER.md](BROWSER.md)。它与现有 Local Web 分开，尚不提供公网扫码采集。
+
 - 新平台接口：`netease_music_insight/providers/` 和 `service.py`。
 - 导出字段与联合分析：`report.py`、`combined.py`，并更新 [DATA_FORMAT.md](DATA_FORMAT.md)。
 - AI Prompt：集中在 `guidance.py`，Desktop 与 Web 调用同一份数据源。
-- 图形界面：`desktop/assets/index.html`；桌面 Bridge 在 `desktop/bridge.py`，本地 HTTP 适配层在 `web/server.py`。
+- 图形界面：`frontend/index.html`；桌面 Bridge 在 `desktop/bridge.py`，本地 HTTP 适配层在 `web/server.py`。
 - 发行脚本：`.github/workflows/release.yml`，其中 `docs/PORTABLE_START.txt` 会复制进 Windows ZIP。
 
 本地 `output/`、`.cache/`、`.state/`、`.qqmusic/`、`logs/` 和运行组件目录不得提交。提交前用 `git status` 检查暂存区；不要使用真实账号数据制作测试样例或截图。[架构](ARCHITECTURE.md) · [隐私](../PRIVACY.md)。
+
+
+## v3 Online Web
+
+`python -m pip install -e ".[online,test]"` 安装在线与测试依赖；Desktop 额外安装 `.[desktop]`。`requirements*.txt` 为相同依赖的启动兼容文件。`python run_online.py` 默认仅监听 loopback；网易云组件须预先运行 `scripts/prepare_online_api.py` 并配置绝对目录，不在用户请求中安装。详见 [DEPLOYMENT](DEPLOYMENT.md)。
+
+`python -m unittest discover -s tests -v` 包含多用户隔离、CSRF、下载越权、取消、TTL、二维码刷新、真实 Core+Mock Provider、Combined 和 Prompt 测试。
+
+启动 `python scripts/online_ui_fixture.py 58003`，然后 `npm ci --prefix browser` 和 `node browser/tests/online.mjs` 可验证合成数据的共享 UI；可设置 MUSIC_BROWSER_CHANNEL=msedge / chrome。fixture 仅用于测试，不可部署成真实服务。
+
+CI 的 `online.yml` 验证浏览器、Docker 构建、生产容器健康与 Host 边界；原有跨 OS tests 和 Windows Release 保留。共享 UI 的资源集中在 `netease_music_insight/frontend/`，PyInstaller 打包整个资源目录，不打包测试数据或 Online 会话。

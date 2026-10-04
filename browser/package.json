@@ -1,0 +1,7 @@
+{
+  "name": "music-insight-browser-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node tests/smoke.mjs" },
+  "devDependencies": { "playwright": "1.63.0" }
+}

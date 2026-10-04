@@ -16,7 +16,7 @@ class NetEaseProvider(MusicProvider):
     def __init__(self, base_url, root: Path, *, fresh=False, notify=None,
                  present_qr=None, on_qr_expired=None, check_cancel=None,
                  output_dir=None):
-        self.api = MusicApi(base_url)
+        self.api = MusicApi(base_url, check_cancel=check_cancel)
         self.root = root
         self.output_dir = output_dir
         self.fresh = fresh
@@ -47,7 +47,12 @@ class NetEaseProvider(MusicProvider):
 
     def export(self, profile):
         return ExportService(self.api, self.root, fresh=self.fresh, notify=self.notify,
-                             output_dir=self.output_dir).run(profile)
+                             output_dir=self.output_dir, check_cancel=self.check_cancel).run(profile)
+
+    def drop_credentials(self):
+        self.api.cookie = ""
+        self.api.session.cookies.clear()
 
     def logout(self):
-        self.api.cookie = ""
+        self.drop_credentials()
+        self.api.session.close()

@@ -11,19 +11,15 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from ..desktop.bridge import DesktopBridge
+from ..frontend import document
 
 
 CALLS = {
     "snapshot", "navigate", "start", "begin_export", "refresh_qr", "cancel",
     "select_source", "get_topic", "search_catalog", "set_theme",
     "set_output_dir", "clear_cache", "open_result_folder", "open_logs",
+    "browse_library", "get_comparison", "get_guide", "prepare_archive",
 }
-
-
-def _html_path():
-    if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS) / "netease_music_insight" / "desktop" / "assets" / "index.html"
-    return Path(__file__).resolve().parents[1] / "desktop" / "assets" / "index.html"
 
 
 class LocalWebServer(ThreadingHTTPServer):
@@ -35,7 +31,7 @@ class LocalWebServer(ThreadingHTTPServer):
         self.session = secrets.token_urlsafe(32)
         self.csrf = secrets.token_urlsafe(32)
         self.nonce = secrets.token_urlsafe(20)
-        self.html = _html_path().read_text(encoding="utf-8")
+        self.html = document(inline=True)
         super().__init__(("127.0.0.1", 0), LocalWebHandler)
 
     @property
@@ -89,7 +85,7 @@ class LocalWebHandler(BaseHTTPRequestHandler):
     def _download(self, name):
         if name not in {"music_for_ai.json", "music_for_ai_combined.json",
                         "music_summary.md", "music_summary_combined.md",
-                        "AI_ANALYSIS_GUIDE.md"}:
+                        "AI_ANALYSIS_GUIDE.md", "music-insight-export.zip"}:
             self._json(HTTPStatus.NOT_FOUND, {"ok": False})
             return
         state = self.server.bridge.snapshot()["state"]
@@ -104,7 +100,7 @@ class LocalWebHandler(BaseHTTPRequestHandler):
                 raise FileNotFoundError(name)
             with path.open("rb") as source:
                 size = path.stat().st_size
-                kind = "application/json" if name.endswith(".json") else "text/markdown"
+                kind = "application/zip" if name.endswith(".zip") else "application/json" if name.endswith(".json") else "text/markdown"
                 self._headers(HTTPStatus.OK, kind, size, download=name)
                 while chunk := source.read(65536):
                     self.wfile.write(chunk)
@@ -122,7 +118,8 @@ class LocalWebHandler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == "/":
             config = json.dumps({"csrf": self.server.csrf}, ensure_ascii=False).replace("<", "\\u003c")
-            html = self.server.html.replace("<script>",
+            html = self.server.html.replace("<script>", f'<script nonce="{self.server.nonce}">')
+            html = html.replace(f'<script nonce="{self.server.nonce}">',
                 f'<script nonce="{self.server.nonce}">window.musicInsightWeb={config};</script>'
                 f'<script nonce="{self.server.nonce}">', 1)
             body = html.encode("utf-8")
@@ -150,7 +147,7 @@ class LocalWebHandler(BaseHTTPRequestHandler):
                 raise ValueError("invalid request size")
             request = json.loads(self.rfile.read(length))
             name, args = request.get("method"), request.get("args")
-            if name not in CALLS or not isinstance(args, list) or len(args) > 3:
+            if name not in CALLS or not isinstance(args, list) or len(args) > 4:
                 raise ValueError("invalid method")
             result = getattr(self.server.bridge, name)(*args)
             if name == "snapshot" and "state" in result:
