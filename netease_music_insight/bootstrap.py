@@ -17,6 +17,18 @@ NODE_VERSION = "24.16.0"
 NODE_ARCHIVE = f"https://nodejs.org/dist/v{NODE_VERSION}/node-v{NODE_VERSION}-win-x64.zip"
 
 
+def bundled_runtime():
+    """Read-only resources shipped in an app, independent of writable data paths."""
+    if not getattr(sys, "frozen", False):
+        return None
+    base = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent)) / "runtime"
+    node = base / ("node.exe" if sys.platform == "win32" else "node")
+    api = base / "netease-api"
+    if node.is_file() and (api / "server.js").is_file() and (api / "node_modules/express").is_dir():
+        return node, api
+    raise SetupError("运行包的组件不完整。请重新解压整个运行包，不要只移动主程序。")
+
+
 class SetupError(RuntimeError):
     pass
 
@@ -98,8 +110,15 @@ def _ensure_dependencies(api_dir, npm, notify):
 
 
 @contextlib.contextmanager
-def local_api(root: Path, notify=None):
+def local_api(root: Path, notify=None, cancellation=None):
     notify = notify or (lambda message: None)
+    runtime = bundled_runtime() if getattr(sys, "frozen", False) else None
+    if runtime:
+        from .online.provider_runtime import prepared_context
+        node, api = runtime
+        with prepared_context(api, cancellation=cancellation, node=node)(root, notify) as base:
+            yield base
+        return
     try:
         node, npm = _node(root, notify)
         api_dir = _api_source(root, notify)

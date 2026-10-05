@@ -102,7 +102,8 @@ class MusicInsightService:
         phase = "login"
         try:
             if provider == "netease":
-                context = self.api_context or local_api
+                context = self.api_context or (lambda root, notify: local_api(
+                    root, notify=notify, cancellation=self.cancellation))
                 with context(self.root, notify=lambda msg: self._notice(provider, msg)) as base:
                     client = NetEaseProvider(
                         base, self.root, fresh=self.fresh,

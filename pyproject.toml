@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netease-music-insight"
-version = "3.0.0.dev0"
+version = "3.0.0rc1"
 description = "Export NetEase and QQ Music account data for AI analysis"
 readme = "README.md"
 requires-python = ">=3.10"

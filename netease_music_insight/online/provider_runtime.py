@@ -13,16 +13,16 @@ import requests
 from ..bootstrap import SetupError
 
 
-def ready(api_dir):
-    return bool(api_dir and shutil.which("node") and
+def ready(api_dir, node=None):
+    return bool(api_dir and (node or shutil.which("node")) and
                 (Path(api_dir) / "app.js").is_file() and
                 (Path(api_dir) / "node_modules/express").is_dir())
 
 
-def prepared_context(api_dir, cancellation=None):
+def prepared_context(api_dir, cancellation=None, node=None):
     @contextlib.contextmanager
     def run(root, notify=None):
-        if not ready(api_dir):
+        if not ready(api_dir, node):
             raise SetupError("服务器的网易云组件未准备好。")
         scratch = Path(root) / ".node"
         scratch.mkdir(parents=True, exist_ok=True)
@@ -39,7 +39,7 @@ def prepared_context(api_dir, cancellation=None):
             "fs.writeFileSync(path.join(require('os').tmpdir(),'anonymous_token'),'');" +
             "require(" + json.dumps(str(Path(api_dir).resolve() / "server.js")) +
             ").serveNcmApi({checkVersion:false}).catch(()=>process.exit(1));", encoding="utf-8")
-        process = subprocess.Popen([shutil.which("node"), str(entry)],
+        process = subprocess.Popen([str(node or shutil.which("node")), str(entry)],
                                    cwd=scratch, env=env, stdin=subprocess.DEVNULL,
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)

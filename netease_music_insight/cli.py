@@ -13,7 +13,8 @@ from .ui import ConsoleUI, PLATFORM_NAMES
 
 def app_root():
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
+        from .desktop.app import app_root as desktop_root
+        return desktop_root()
     return Path(__file__).resolve().parent.parent
 
 

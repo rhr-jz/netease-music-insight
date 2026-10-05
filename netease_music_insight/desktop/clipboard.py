@@ -2,13 +2,17 @@
 import ctypes
 import sys
 import time
+import subprocess
 
 
 def copy_text(value):
-    if sys.platform != "win32":
-        raise OSError("此桌面复制功能目前仅支持 Windows。")
     if not isinstance(value, str) or not value:
         raise ValueError("没有可复制的 Prompt。")
+    if sys.platform == "darwin":
+        subprocess.run(["/usr/bin/pbcopy"], input=value.encode("utf-8"), check=True, timeout=5)
+        return
+    if sys.platform != "win32":
+        raise OSError("请在 Local Web 中使用浏览器复制。")
 
     kernel = ctypes.windll.kernel32
     user = ctypes.windll.user32

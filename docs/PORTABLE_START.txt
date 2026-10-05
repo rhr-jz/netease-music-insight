@@ -1,9 +1,27 @@
-Music Insight 目录版
+Music Insight 完整本地运行包（Windows / macOS）
 
-请先解压整个 ZIP，再双击本文件夹里的 MusicInsight.exe。
-在图形界面中选择网易云音乐或 QQ 音乐，用相应 App 扫描程序内的二维码并在手机确认，然后点击“开始整理我的音乐”。首次使用网易云需要联网准备本地接口组件。
+下载对应系统与芯片的 ZIP，先解压整个文件夹：
+Windows 10/11 64 位：双击 MusicInsight.exe。
+Mac Intel：使用 macOS-Intel 包，双击 MusicInsight.app。
+Mac M 系列（Apple Silicon）：使用 macOS-AppleSilicon 包，双击 MusicInsight.app。
+Mac 建议 macOS 14 或更新；旧版系统未经本次构建验证。32 位 Windows 不支持。
+
+不需要安装 Python、Node 或 npm；运行组件已经包含在包中。
+在图形界面中选择网易云音乐或 QQ 音乐，用相应 App 扫描程序内的二维码并在手机确认，然后点击“开始整理我的音乐”。同步音乐平台数据需要联网；已导出的档案和 Prompt 可离线浏览。
 完成后在“我的音乐”查看数据，在“AI 分析”选择方向并复制完整 Prompt；“导出”页会列出数据文件。把 music_for_ai.json 上传给你选择的 AI；两个平台时使用 music_for_ai_combined.json。
-若此版本包含 Local Web，可在“设置”中点击“启动 Web 版”，系统浏览器会自动打开本机页面；页面只监听 127.0.0.1。
-导出数据默认保存在本文件夹下的 output/，也可以在设置中更改。不要只移动 EXE 而丢弃 _internal/。本程序需要 Microsoft Edge WebView2 Runtime。
+Local Web：在“设置”中点击“启动 Web 版”，或双击 Open Local Web.cmd / Open Local Web.command；系统浏览器自动打开本机页面，只监听 127.0.0.1。
+Windows 桌面使用系统的 Edge WebView2 Runtime；如该组件缺失会自动改用系统浏览器，数据功能相同。
+请保留整个应用目录；不要只移动 EXE 而丢弃 _internal/。Mac 可以将整个 MusicInsight.app 拖到“应用程序”。
+
+数据、设置、缓存和日志默认位于用户目录，不写入分发包：
+Windows：%LOCALAPPDATA%\MusicInsight
+Mac：~/Library/Application Support/MusicInsight
+导出文件在该目录的 output/；也可在设置中修改输出位置，并用“打开数据文件夹”查看。
+转发原始 ZIP 即可，不要将自己的导出数据或凭据一起打包。
+
+高级入口：主程序支持 --local-web 和 --cli --provider netease / qq / all。
+本地运行包提供完整客户端功能；若要提供无需下载的公网网站，需要另行部署服务器，见项目部署文档。
+
+本版本没有付费开发者签名或 Apple 公证。首次打开可能出现系统安全确认；请核对下载来源和 SHA256，通过系统提供的确认流程打开。不要关闭系统安全保护。若系统明确检测到恶意软件，请停止运行并反馈检测名称。
 
 如果安全软件报告威胁，请不要关闭保护或强行运行。请改用 GitHub 源码版，并在 Issue 中提供检测名称（不要附上个人音乐数据或 Cookie）。

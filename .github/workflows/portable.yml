@@ -1,0 +1,50 @@
+name: Portable Windows and macOS
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/online-web']
+    paths:
+      - '.github/workflows/portable.yml'
+      - 'scripts/build_portable.py'
+      - 'netease_music_insight/**'
+      - 'docs/PORTABLE_START.txt'
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            label: Windows-x64
+          - os: macos-15-intel
+            label: macOS-Intel
+          - os: macos-14
+            label: macOS-AppleSilicon
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+      - run: python -m pip install -r requirements-desktop.txt pyinstaller==6.16.0
+      - run: python scripts/prepare_online_api.py build/portable-api
+      - name: Build and check native package
+        run: python scripts/build_portable.py --api-dir build/portable-api
+      - name: Check actual macOS WebKit window and clipboard
+        if: runner.os == 'macOS'
+        run: |
+          app=$(find build -path '*/dist/MusicInsight.app/Contents/MacOS/MusicInsight' | head -1)
+          "$app" --gui-smoke
+          python -c "from netease_music_insight.desktop.clipboard import copy_text; import subprocess; copy_text('Music Insight 中文复制测试'); assert subprocess.check_output(['/usr/bin/pbpaste']).decode() == 'Music Insight 中文复制测试'"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MusicInsight-${{ matrix.label }}
+          path: dist/*
+          compression-level: 0
+          if-no-files-found: error
