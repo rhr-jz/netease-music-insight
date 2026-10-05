@@ -20,6 +20,17 @@ def app_root():
 
 def _configure_console():
     if os.name == "nt":
+        # The portable entry point is a windowed executable. Explicit CLI use
+        # must attach to the caller's terminal (or create one if launched alone).
+        if getattr(sys, "frozen", False) and sys.stdout is None:
+            import ctypes
+            kernel = ctypes.windll.kernel32
+            if not kernel.AttachConsole(0xFFFFFFFF) and not kernel.GetConsoleWindow():
+                if not kernel.AllocConsole():
+                    raise OSError("无法打开 CLI 控制台。请使用桌面或 Local Web 入口。")
+            sys.stdin = open("CONIN$", "r", encoding="utf-8")
+            sys.stdout = open("CONOUT$", "w", encoding="utf-8", buffering=1)
+            sys.stderr = sys.stdout
         for stream in (sys.stdout, sys.stderr):
             if hasattr(stream, "reconfigure"):
                 stream.reconfigure(encoding="utf-8", errors="replace")
