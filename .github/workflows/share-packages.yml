@@ -1,0 +1,61 @@
+name: Publish verified portable packages
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Portable Windows and macOS run ID
+        required: false
+        type: string
+  push:
+    branches: ['codex/online-web']
+    paths: ['.github/workflows/share-packages.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for all native and compatibility checks
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_RUN: ${{ inputs.run_id }}
+        shell: bash
+        run: |
+          source_run="$INPUT_RUN"
+          if [ -z "$source_run" ]; then
+            source_run=$(gh run list --workflow portable.yml --branch "$GITHUB_REF_NAME" --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
+          [[ "$source_run" =~ ^[0-9]+$ ]]
+          gh run watch "$source_run" --interval 30 --exit-status
+          source_sha=$(gh run view "$source_run" --json headSha --jq .headSha)
+          echo "run=$source_run" >> "$GITHUB_OUTPUT"
+          echo "sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.source.outputs.run }}
+          pattern: MusicInsight-*
+          merge-multiple: true
+          path: packages
+      - name: Verify and publish downloadable ZIP files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        shell: bash
+        run: |
+          cd packages
+          cat *.zip.sha256 > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          test "$(find . -maxdepth 1 -name '*.zip' | wc -l)" -eq 3
+          if gh release view portable-v3.0.0-rc.1 >/dev/null 2>&1; then
+            echo 'Release already exists; no published assets are overwritten.'
+            exit 0
+          fi
+          gh release create portable-v3.0.0-rc.1 *.zip SHA256SUMS.txt \
+            --target "$SOURCE_SHA" --prerelease --latest=false \
+            --title 'Music Insight 3.0 RC1 — Windows & macOS 完整运行包' \
+            --notes-file ../docs/PORTABLE_RELEASE.md
