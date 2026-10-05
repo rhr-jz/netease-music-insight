@@ -48,3 +48,28 @@ jobs:
           path: dist/*
           compression-level: 0
           if-no-files-found: error
+  windows-arm-compatibility:
+    needs: package
+    runs-on: windows-11-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: MusicInsight-Windows-x64
+          path: artifact
+      - name: Check Windows 11 ARM x64 compatibility
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem artifact/*.zip | Select-Object -First 1
+          Expand-Archive -LiteralPath $zip.FullName -DestinationPath artifact/unpacked
+          $exe = (Resolve-Path artifact/unpacked/MusicInsight/MusicInsight.exe).Path
+          $previousPath = $env:PATH
+          try {
+            $env:PATH = ''
+            foreach ($argument in @('--smoke', '--web-smoke', '--runtime-smoke')) {
+              $process = Start-Process -FilePath $exe -ArgumentList $argument -WindowStyle Hidden -PassThru -Wait
+              if ($process.ExitCode -ne 0) { throw "Packaged $argument failed with $($process.ExitCode)" }
+            }
+          } finally {
+            $env:PATH = $previousPath
+          }

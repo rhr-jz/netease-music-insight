@@ -26,7 +26,9 @@ def copy_api(source, destination):
                 or name.endswith(('.map', '.ts'))]
     destination.mkdir(parents=True)
     # Keep all runtime modules/data, not just the API endpoints currently used.
-    for name in ('node_modules', 'module', 'util', 'plugins', 'public', 'data'):
+    # The helper's public folder is its own demo website/screenshots; our UI
+    # and QR endpoints do not use it. Do not distribute that unrelated website.
+    for name in ('node_modules', 'module', 'util', 'plugins', 'data'):
         if (source / name).exists():
             shutil.copytree(source / name, destination / name, ignore=ignored)
     for name in ('app.js', 'server.js', 'main.js', 'generateConfig.js', 'package.json', 'LICENSE'):
@@ -78,7 +80,8 @@ def main():
                '--add-data', f'{node_license}{sep}runtime',
                '--add-binary', f'{node}{sep}runtime']
     for module in ('PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'tkinter', 'matplotlib',
-                   'numpy', 'scipy', 'pytest', 'fastapi', 'uvicorn', 'httpx'):
+                   'numpy', 'scipy', 'pytest', 'fastapi', 'uvicorn', 'httpx',
+                   'PIL.AvifImagePlugin', 'PIL._avif'):
         command += ['--exclude-module', module]
     for package in ('requests', 'qrcode', 'pillow', 'qqmusic-api-python', 'pywebview'):
         command += ['--copy-metadata', package]
