@@ -2,7 +2,7 @@
 import asyncio
 import re
 from pathlib import Path
-from threading import Event
+from threading import Event, RLock
 
 from .auth import LoginBack
 from .bootstrap import SetupError, local_api
@@ -16,9 +16,24 @@ from .providers.netease import NetEaseProvider
 class CancellationToken:
     def __init__(self):
         self._flag = Event()
+        self._lock = RLock()
+        self._cleanups = set()
 
     def cancel(self):
         self._flag.set()
+        with self._lock:
+            for cleanup in tuple(self._cleanups):
+                cleanup()
+
+    def register_cleanup(self, cleanup):
+        with self._lock:
+            self._cleanups.add(cleanup)
+            if self._flag.is_set():
+                cleanup()
+
+    def unregister_cleanup(self, cleanup):
+        with self._lock:
+            self._cleanups.discard(cleanup)
 
     def check(self):
         if self._flag.is_set():
@@ -30,6 +45,7 @@ def _legacy_event(provider, message):
     kinds = (("已扫码", "login_scanned"), ("已确认", "login_confirming"),
              ("等待扫码", "login_waiting"), ("二维码已过期", "login_qr_expired"),
              ("歌单进度", "playlist_tracks_progress"),
+             ("歌单歌曲分页", "track_pages_progress"),
              ("✓ 喜欢音乐", "liked_songs_done"), ("✓ 我喜欢", "liked_songs_done"),
              ("自建歌单", "playlists_progress"), ("播放记录", "history_progress"))
     kind = next((value for marker, value in kinds if marker in message), "status")
@@ -55,7 +71,7 @@ def _failure(exc, phase):
 
 class MusicInsightService:
     def __init__(self, root: Path, *, fresh=False, emit=None, present_qr=None,
-                 on_qr_expired=None, cancellation=None, output_dir=None):
+                 on_qr_expired=None, cancellation=None, output_dir=None, api_context=None):
         self.root = Path(root)
         self.output_dir = Path(output_dir) if output_dir is not None else self.root / "output"
         self.fresh = fresh
@@ -63,6 +79,7 @@ class MusicInsightService:
         self.present_qr = present_qr
         self.on_qr_expired = on_qr_expired
         self.cancellation = cancellation or CancellationToken()
+        self.api_context = api_context
 
     def _notice(self, provider, message):
         self.cancellation.check()
@@ -85,7 +102,9 @@ class MusicInsightService:
         phase = "login"
         try:
             if provider == "netease":
-                with local_api(self.root, notify=lambda msg: self._notice(provider, msg)) as base:
+                context = self.api_context or (lambda root, notify: local_api(
+                    root, notify=notify, cancellation=self.cancellation))
+                with context(self.root, notify=lambda msg: self._notice(provider, msg)) as base:
                     client = NetEaseProvider(
                         base, self.root, fresh=self.fresh,
                         output_dir=self.output_dir,
@@ -93,6 +112,8 @@ class MusicInsightService:
                         present_qr=lambda path, url: self._qr(provider, path, url),
                         on_qr_expired=lambda: self._expired(provider),
                         check_cancel=self.cancellation.check)
+                    cleanup = getattr(client, "drop_credentials", lambda: None)
+                    self.cancellation.register_cleanup(cleanup)
                     try:
                         profile = client.login()
                         self.emit(MusicEvent("login_success", provider))
@@ -105,6 +126,7 @@ class MusicInsightService:
                         result = client.export(profile)
                     finally:
                         client.logout()
+                        self.cancellation.unregister_cleanup(cleanup)
             else:
                 result = asyncio.run(self._export_qq(provider))
             self.cancellation.check()
@@ -133,6 +155,8 @@ class MusicInsightService:
             present_qr=lambda path: self._qr(provider, path),
             on_qr_expired=lambda: self._expired(provider),
             check_cancel=self.cancellation.check)
+        cleanup = getattr(client, "drop_credentials", lambda: None)
+        self.cancellation.register_cleanup(cleanup)
         try:
             profile = await client.login()
             self.emit(MusicEvent("login_success", provider))
@@ -150,6 +174,7 @@ class MusicInsightService:
                 raise failure from exc
         finally:
             await client.logout()
+            self.cancellation.unregister_cleanup(cleanup)
 
     def combine(self, netease_data, qq_data):
         self.cancellation.check()

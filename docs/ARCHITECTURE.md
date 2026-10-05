@@ -1,50 +1,43 @@
-# Music Insight 当前架构
+# Music Insight v3 架构
 
-Music Insight 有三个入口：Windows Desktop、Local Web 与 CLI。它们调用同一套 `MusicInsightService`、Provider、数据整理和 Prompt 代码，不复制音乐平台请求。
+四个入口，一套 Core。保持现有 Provider、分页、报表、联合匹配和 Prompt 逻辑，不复制平台实现。
 
 ```text
-run_desktop.py → pywebview → desktop/assets/index.html → DesktopBridge ┐
-run_web.py     → 127.0.0.1 HTTP → 同一份 index.html → DesktopBridge ├→ MusicInsightService
-run.py         → cli.py ───────────────────────────────────────────────┘
-                                                                  │
-                ┌─────────────────────────────────────────────────┘
-                ▼
-      providers/netease.py · providers/qqmusic.py
-                ↓
-      report.py · combined.py · guidance.py
-                ↓
-      output/ JSON · Markdown · prompts/
+Desktop ─ pywebview ─ DesktopBridge ┐
+Local Web ─ loopback HTTP ──────────┤
+CLI ─ cli.py ──────────────────────┼─ MusicInsightService
+Online Web ─ FastAPI ─ Session ────┘       │
+                         Job/Bridge       ├─ NetEaseProvider
+                         Storage          ├─ QQMusicProvider
+                                          └─ report / combined / guidance
 ```
 
-## Core 与界面
+## 共享界面
 
-- `service.py` 负责登录、抓取与导出编排；`providers/` 处理平台差异。网易云通过本机 Node 接口访问账号数据，QQ 使用 `qqmusic-api-python`。
-- `report.py` 构造单平台数据和摘要；`combined.py` 只合并高置信度的跨平台同一录音；`guidance.py` 根据真实可用字段生成 AI Prompt。
-- `events.py` 向界面发送扫码、资料、歌单、播放历史、统计和导出事件；`errors.py` 统一核心错误。Core 不依赖终端打印或 GUI。
-- `desktop/bridge.py` 维护线程安全的任务状态。后台 Worker 执行 `MusicInsightService`；界面只读取状态快照，取消由 `CancellationToken` 协作完成。
-- `desktop/library.py` 从已有 JSON 恢复离线 Dashboard、数据来源和 AI 卡片。Desktop 与 Web 使用同一份 `desktop/assets/index.html` 和同一份 `guidance.py`。
-- `cli.py` 与 `ui.py` 保留进阶命令行入口；不影响图形入口。
+`frontend/index.html`、`ui.css`、`app.js`、`library.js` 是 Desktop、Local Web 与 Online Web 的唯一 UI 资源。`bridge.js` 的 MusicInsightAPI 适配 pywebview、Local HTTP 与 Online API。业务数据、Prompt 和跨平台匹配来自 Python Core。
 
-## Desktop
+Desktop 使用内嵌资源，不依赖文件 URL 或远程 CDN；Local Web 给所有脚本加 nonce 并注入本机 CSRF 配置。Online 使用独立同源资源、严格 CSP、带 nonce 的动态布局，不给 JS 暴露平台凭据。
 
-`run_desktop.py` 启动 pywebview 窗口。Windows 上使用系统 WebView2；窗口内通过 pywebview JS API 调用 Bridge，二维码由 Bridge 读取到内存并作为图片显示。数据获取在后台线程执行，不占用 UI 线程。窗口尺寸与布局在共享页面中维护。
+## 本地入口
 
-## Local Web
+Desktop 后台线程调用 Core，Windows 主线程只负责界面。Local Web 保留 loopback-only ThreadingHTTPServer、随机空闲端口、精确 Host/Origin 校验、独立随机 Cookie 和 CSRF。当前 Desktop 会话可与 Local Web 共用 Bridge。本机结果恢复和离线浏览不变。
 
-`run_web.py` 启动 `web/server.py`，绑定 `127.0.0.1` 的随机空闲端口，然后自动打开默认浏览器。桌面“设置 → 启动 Web 版”也可启动服务，并与已打开的桌面窗口共享 Bridge 状态。页面通过本地 HTTP 适配层调用 Bridge；Web 不直接请求网易云或 QQ 音乐接口。
+`desktop/library.py` 保留历史导出发现与事实 Dashboard helper 的兼容导入；`library.py` 提供公共分页浏览。CLI 继续使用 `run.py --provider netease/qq/all`。
 
-安全边界：
+## Online
 
-- 仅允许精确的 `127.0.0.1:端口` Host；修改状态的请求还要有同源 Origin、会话 Cookie 和 CSRF 标头。
-- 会话 Cookie 为 HttpOnly、SameSite=Strict；页面使用严格的 CSP、禁用缓存和防嵌入标头，不载入第三方脚本。
-- 浏览器只得到展示所需的二维码和状态，不得到平台 Cookie 或 Token；原始异常详情仅写入本机日志。
-- 下载接口只提供当前选中结果中的 JSON、摘要和分析指南；文件名固定，并检查解析后的路径仍在当前结果目录。
-- 不提供远程数据库或作者服务器。由于默认只绑定回环地址，其他设备无法直接访问电脑上的 Local Web。
+`online/server.py` 提供 FastAPI API；`sessions.py` 为每个安全随机 Session 创建独立 Bridge、目录和状态；`jobs.py` 限制全服务器任务容量。会话内只允许一个任务，每个平台的请求串行/受已有 Provider 限流控制。线程任务不阻塞 ASGI，SSE 失败回退查询快照。
 
-## 数据与进度
+Job 状态：pending、login、syncing、processing、completed、partial、cancelled、failed。两平台逐个登录；一个失败可保留另一个已完成结果，两者均成功才运行 Core.combine。新单平台同步使旧 Combined 失效。刷新可恢复状态，重启不恢复。
 
-两平台及联合结果仍使用原导出格式，保留收藏和歌单时间的实际可用值；缺失值不推断。成功导出的数据保存在用户指定的 `output/`，阶段缓存放在 `.cache/`。已导出的 Dashboard 与 Prompt 可离线浏览；重新同步音乐平台需要网络。缓存和输出的清理边界见 [隐私说明](../PRIVACY.md)，字段见 [数据格式](DATA_FORMAT.md)。
+`LocalTemporaryStorage` 实现 StorageBackend。每个 Session 与 Job 使用随机独立目录，缓存、QR、QQ device 配置和输出不共享。下载只认可当前会话的 opaque manifest ID。ZIP 包含报表与独立 Prompt。退出立即撤销访问，取消与 finally 清理凭据和目录；TTL 执行相同流程。
 
-## 验证与发布
+`provider_runtime.py` 注入替代 local_api 的预构建上下文。Docker 在构建阶段下载校验固定上游和安装锁定依赖；每 Job 创建独立 loopback Node 进程和 temp 环境，禁用版本下载检查，结束时终止进程。
 
-离线测试运行 `python -m unittest discover -s tests -v`，覆盖网易云、QQ、Combined、Desktop Bridge、Web 安全边界和导出。GitHub Actions 在 Windows、macOS、Linux 运行测试；Windows Release 工作流用 PyInstaller 生成目录版 ZIP。开发步骤见 [DEVELOPMENT.md](DEVELOPMENT.md)。最初的 GUI / Web 选型记录保留在 [legacy/](legacy/GUI_WEB_ARCHITECTURE_STAGE1.md)。
+## 安全与扩展
+
+Online 的 Session Cookie 为 HttpOnly / Secure / SameSite=Strict；生产 HTTPS、Host/Origin/请求头校验、请求大小限制、严格模型、Session/IP 限流、no-store 与安全响应头。日志固定字段，不格式化任意上游异常。前端没有广告、遥测或 Token LocalStorage。
+
+当前仅支持单实例/单 Worker。未来可替换 Session Store、Job Queue 与 StorageBackend；当前不增加 Redis 或对象存储依赖。Docker 非 root、只读、tmpfs、有资源限制和健康检查。
+
+本地与在线版本的数据边界不同：[PRIVACY](../PRIVACY.md)。[在线接口与使用](ONLINE_WEB.md) · [部署](DEPLOYMENT.md)

@@ -39,6 +39,8 @@ def qr_login(api, show, qr_path: Path | None = None, poll_seconds=2,
                 check_cancel()
             time.sleep(poll_seconds)
             result = api.get("/login/qr/check", {"key": key, "noCookie": "true"}, auth=False)
+            if check_cancel:
+                check_cancel()
             code = result.get("code")
             if code != prior:
                 if code == 801:

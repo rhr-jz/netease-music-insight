@@ -19,10 +19,16 @@ logs/
 *.cookie
 .env
 .env.*
+!.env.example
+online-temp/
+sessions/
+*.qr.png
 __pycache__/
 *.py[cod]
 .pytest_cache/
 build/
+_site/
+node_modules/
 dist/
 /screenshots/
 *.spec

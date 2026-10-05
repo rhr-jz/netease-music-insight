@@ -8,6 +8,13 @@
 
 [下载 Windows 版](https://github.com/rhr-jz/netease-music-insight/releases/latest) · [快速开始](docs/QUICK_START.md) · [常见问题](docs/FAQ.md) · [English](README_EN.md)
 
+## 选择你的使用方式
+
+- **🌐 Online Web**：部署后打开 HTTPS 网址即可扫码整理；平台凭据与音乐数据会临时经过部署服务器。v3 提供完整服务器与 Docker 配置，当前未公布已运行的官方在线地址。[在线版](docs/ONLINE_WEB.md) · [部署指南](docs/DEPLOYMENT.md)
+- **🖥 Desktop**：下载 Windows ZIP，在自己的电脑上整理数据与离线查看。
+- **💻 Local Web**：在本机浏览器使用，默认仅绑定 `127.0.0.1`。
+- **CLI**：继续保留进阶使用与自动化入口。
+
 ## 界面截图
 
 以下均为**合成演示数据**。登录图中的图案不是有效登录二维码，截图不包含真实账号、歌单或凭据。
@@ -44,7 +51,7 @@ Windows 10/11 需要 Microsoft Edge WebView2 Runtime。首次整理网易云音�
 
 ## Local Web
 
-**Music Insight Web 是运行在你电脑上的 Local Web，不是云端 SaaS。** 网页由本机 Python 后端提供，默认只监听 `127.0.0.1` 的随机空闲端口；程序启动后自动打开系统默认浏览器。音乐数据不会默认上传到作者服务器，其他局域网设备也不能直接访问这个地址。
+**Music Insight Local Web 是运行在你电脑上的本地网页；Online Web 是独立的服务器版本。** 网页由本机 Python 后端提供，默认只监听 `127.0.0.1` 的随机空闲端口；程序启动后自动打开系统默认浏览器。音乐数据不会默认上传到作者服务器，其他局域网设备也不能直接访问这个地址。
 
 - 在包含该功能的桌面版中，打开“设置” → “启动 Web 版”。
 - 源码用户可运行 `python run_web.py`；浏览器会自动打开。
@@ -68,9 +75,9 @@ Music Insight 整理数据 → 选择分析方向 → 复制 Prompt
 
 ## 数据与隐私
 
-> 🔒 **Privacy First：你的音乐数据默认只保存在本地。**
+> 🔒 **Privacy First：本地版数据留在本机；在线版仅在临时会话中处理并自动清理。**
 
-Music Insight 不获取账号密码，不把 Cookie 上传到作者服务器，不默认上传个人歌单，不下载版权音乐，不绕过 VIP 或破解付费内容。扫码后与音乐平台通信是获取你授权数据所必需的；**只有你主动把导出文件上传给所选 AI，AI 服务才会收到这些数据**。
+本地版不把 Cookie 或歌单上传到作者服务器。在线版为扫码和整理会临时在部署服务器处理这些数据，退出或 TTL 到期后删除。各版本均不索取密码、不下载版权音乐、不绕过 VIP 或破解付费内容。扫码后与音乐平台通信是获取你授权数据所必需的；**只有你主动把导出文件上传给所选 AI，AI 服务才会收到这些数据**。
 
 播放记录与收藏时间以平台实际返回为准。网易云返回的播放记录可能只覆盖有限范围；QQ 音乐完整播放历史当前不可用。缺失或无法访问的内容会在导出中标记。[完整隐私说明](PRIVACY.md) · [数据格式](docs/DATA_FORMAT.md)。
 
@@ -83,7 +90,7 @@ Music Insight 不获取账号密码，不把 Cookie 上传到作者服务器，�
 
 ## 开发者运行方式
 
-需要 Python 3.10+。Windows 桌面源码版依赖 `requirements-desktop.txt`；CLI 与 Local Web 的基础依赖见 `requirements.txt`。网易云导出在 macOS / Linux 上还需要 Node.js 18+。
+需要 Python 3.10+。在线依赖通过 `pip install -e ".[online,test]"` 安装；运行 `python run_online.py`，网易云须按[部署指南](docs/DEPLOYMENT.md)提前准备 Node 组件。Windows 桌面源码版依赖 `requirements-desktop.txt`；CLI 与 Local Web 的基础依赖见 `requirements.txt`。网易云导出在 macOS / Linux 上还需要 Node.js 18+。
 
 ```bash
 python -m pip install -r requirements-desktop.txt

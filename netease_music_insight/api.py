@@ -13,13 +13,17 @@ class LoginExpired(ApiError):
 
 
 class MusicApi:
-    def __init__(self, base_url: str, cookie: str = "", interval: float = 0.25):
+    def __init__(self, base_url: str, cookie: str = "", interval: float = 0.25, check_cancel=None):
         self.base_url = base_url.rstrip("/")
         self.cookie = cookie
         self.interval = interval
         self.session = requests.Session()
+        # Platform credentials sent to the local helper must bypass global proxies.
+        if self.base_url.startswith(("http://127.0.0.1:", "http://localhost:")):
+            self.session.trust_env = False
         self.session.headers.update({"User-Agent": "NetEaseMusicInsight/1.0"})
         self._last = 0.0
+        self.check_cancel = check_cancel or (lambda: None)
 
     def get(self, path: str, params=None, *, auth: bool = True, timeout: int = 30):
         values = dict(params or {})
@@ -27,6 +31,7 @@ class MusicApi:
             values["cookie"] = self.cookie
         values["timestamp"] = int(time.time() * 1000)
         for attempt in range(3):
+            self.check_cancel()
             delay = self.interval - (time.monotonic() - self._last)
             if delay > 0:
                 time.sleep(delay)
@@ -40,6 +45,7 @@ class MusicApi:
                     time.sleep(1.5 * (attempt + 1))
                     continue
                 raise ApiError("网络或本地接口请求失败，请检查连接后重试。") from exc
+            self.check_cancel()
             if not isinstance(data, dict):
                 raise ApiError("接口返回了无法识别的数据。")
             code = data.get("code")

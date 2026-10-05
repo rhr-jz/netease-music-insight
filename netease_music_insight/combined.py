@@ -89,3 +89,28 @@ def write_combined(folder, data):
 区分核心审美、阶段偏好、怀旧和功能性音乐，引用具体曲目或歌单作为证据。按 70% 熟悉、20% 邻近探索、10% 陌生探索给出八周可实践的听歌计划。若能联网，可核查当前 18–25 岁人群的音乐谈资并注明来源和时间。不要编造热度或用户的播放行为。
 """)
     write_guidance(folder, data, combined=True)
+
+
+def comparison_data(data):
+    """Factual cross-platform summary derived from the existing matched catalog."""
+    if not data or "platforms" not in data:
+        return None
+    net, qq = data["platforms"]["netease"], data["platforms"]["qq_music"]
+    groups = data.get("matched_catalog", [])
+    common = [group for group in groups if group.get("match_confidence") == "high"]
+    unique = {provider: [group for group in groups if len(group["sources"]) == 1 and group["sources"][0].get("provider") == provider]
+              for provider in ("netease", "qq_music")}
+    artists = {}
+    for provider, platform in (("netease", net), ("qq_music", qq)):
+        artists[provider] = {_key(name): name.strip() for song in platform.get("song_catalog", [])
+                             for name in (song.get("artists") or "").split(" / ") if _key(name)}
+    shared = sorted(artists["netease"].keys() & artists["qq_music"].keys())
+    return {"common_tracks": len(common), "netease_only": len(unique["netease"]),
+            "qq_only": len(unique["qq_music"]), "common_artists_count": len(shared),
+            "common_artists": [artists["netease"][key] for key in shared[:20]],
+            "netease_only_artists": [artists["netease"][key] for key in sorted(artists["netease"].keys() - artists["qq_music"].keys())[:20]],
+            "qq_only_artists": [artists["qq_music"][key] for key in sorted(artists["qq_music"].keys() - artists["netease"].keys())[:20]],
+            "sample_common": [{"name": group["name"], "artists": group["artists"]} for group in common[:20]],
+            "playlists": [{"provider": provider, "created": sum(p.get("created_by_user") is True for p in platform.get("playlists", [])),
+                           "subscribed": sum(p.get("created_by_user") is not True for p in platform.get("playlists", []))}
+                          for provider, platform in (("netease", net), ("qq_music", qq))]}
