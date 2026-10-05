@@ -1,5 +1,9 @@
 # 常见问题
 
+## 在哪里下载 Windows 和 Mac 完整版？
+
+进入 [3.0 RC1 下载页面](https://github.com/rhr-jz/netease-music-insight/releases/tag/portable-v3.0.0-rc.1)，选择 Windows、Mac M 系列或 Mac Intel 包。完整解压后打开主程序，无需安装 Python、Node 或 npm。[三步上手](QUICK_START.md)。
+
 ## Local Web 是云端网站吗？手机能访问吗？
 
 不是。Local Web 在你的电脑上启动本地后端，只监听 `127.0.0.1` 的随机端口，并自动打开系统默认浏览器。它不会把音乐数据默认传到作者服务器。同一局域网内的手机无法直接访问这个地址；请在电脑打开网页，再用手机扫描电脑上的二维码。源码入口为 `python run_web.py`，桌面版可在“设置”中启动。
@@ -14,7 +18,7 @@
 
 ## 首次启动很慢
 
-源码版会建立 Python 虚拟环境。网易云音乐还会下载本地接口代码并安装其依赖；Windows 在没有 Node.js 时会准备便携版本，macOS / Linux 的网易云导出需要预先安装 Node.js 18+。仅使用 QQ 音乐无需 Node.js。首次运行需要访问 Python 包索引；网易云还需访问 GitHub、Node.js 官网和 npm 仓库。后续运行会复用已下载的组件。
+3.0 RC1 完整运行包已经包含本地运行组件，首次启动无需下载依赖。扫码和同步音乐平台需要网络。旧版本或源码版可能还需要准备 Python 环境、Node 和网易云接口依赖。
 
 ## 为什么播放记录少于我的真实听歌历史？
 
@@ -28,15 +32,15 @@ QQ 音乐播放历史目前没有通过真实账号验证的可靠接口，所�
 
 ## 数据存在哪里？如何删除？
 
-网易云导出文件在 `output/用户名_UID/`，QQ 在 `output/qq_music/用户名_UID/`；阶段性缓存分别在 `.cache/UID/` 与 `.cache/qq_music/UID/`。Desktop 和 Local Web 的“导出”页会显示当前文件；Web 版可直接下载。详情见 [隐私说明](../PRIVACY.md)。
+完整运行包默认保存到 Windows 的 `%LOCALAPPDATA%\MusicInsight` 或 Mac 的 `~/Library/Application Support/MusicInsight`；导出文件在其中的 `output/`。用“导出”页的“打开数据文件夹”查看，也可在设置中更改路径。旧版本或源码版可能保存在仓库的 `output/` 下。详情见 [隐私说明](../PRIVACY.md)。
 
 ## 我需要安装 Git 或手动找 Cookie 吗？
 
-不需要。源码版需要 Python；macOS / Linux 导出网易云还需要 Node.js 18+，Windows EXE 版不需要预装 Python 或 Node.js。登录只需手机扫码。
+不需要。Windows 和 Mac 的完整运行包已包含依赖；登录只需手机扫码。只有源码运行时才需要自行准备开发环境。
 
-## macOS 提示无法打开启动脚本怎么办？
+## Mac 首次打开需要注意什么？
 
-请确认仓库 ZIP 已完整解压，并双击带有 `.command` 后缀的 `一键运行.command`。如果脚本被意外移除了执行权限，可在仓库目录运行 `chmod +x 一键运行.command` 后重试。
+M 系列和 Intel 芯片需选择对应运行包，建议 macOS 14 或更新，完整解压后打开 `MusicInsight.app`。本版本未 Apple 公证，首次可能需要系统提供的安全确认；请核对下载来源与 SHA256。源码版的 `.command` 启动脚本另见开发文档。
 
 ## Edge 提示“检测到病毒”怎么办？
 

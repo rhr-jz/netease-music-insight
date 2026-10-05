@@ -1,21 +1,48 @@
-# Music Insight
+# 🎧 Music Insight
 
-Export your NetEase Cloud Music or QQ Music account metadata and turn it into an AI-ready personal music profile.
+## Listen. Understand. Discover.
 
-![Music Insight home screen using synthetic data](assets/screenshots/home.png)
+**Organize your NetEase Cloud Music and QQ Music collections, then explore your music taste with data and AI prompts.**
 
-On Windows 10/11, download a GUI version of the portable ZIP from [Releases](https://github.com/rhr-jz/netease-music-insight/releases), extract it, and run `MusicInsight.exe`. Choose a platform and scan the QR code inside the window; older releases still use the CLI. The GUI needs Microsoft Edge WebView2 Runtime. Alternatively, install Python 3.10+, download this repository, and run `python run_desktop.py` after installing `requirements-desktop.txt`; `python run.py` remains the CLI. If security software reports a threat, do not bypass the block; see [download security](SECURITY.md).
+Scan a QR code inside the app, browse your music dashboard, export your data, and copy a ready-to-use prompt. Use one platform or combine both.
 
-On macOS, install [Python 3.10+](https://www.python.org/downloads/macos/), download and extract the repository ZIP, then double-click `一键运行.command`. NetEase exports additionally require [Node.js 18+](https://nodejs.org/); QQ Music does not. The launcher prepares an isolated Python environment on first run. Select a platform, scan the QR code in its music app, and use the completion menu to reveal the output folder in Finder.
+## Download and open
 
-On Linux, install Python 3.10+ (and Node.js 18+ for NetEase), create a virtual environment, install `requirements.txt`, and run `python run.py`. The desktop opener uses `xdg-open` when available.
+- **[Windows · 68.3 MiB](https://github.com/rhr-jz/netease-music-insight/releases/download/portable-v3.0.0-rc.1/MusicInsight-Windows-x64-3.0.0rc1.zip)**
+- **[Mac Apple Silicon · 73.6 MiB](https://github.com/rhr-jz/netease-music-insight/releases/download/portable-v3.0.0-rc.1/MusicInsight-macOS-AppleSilicon-3.0.0rc1.zip)**
+- **[Mac Intel · 74.7 MiB](https://github.com/rhr-jz/netease-music-insight/releases/download/portable-v3.0.0-rc.1/MusicInsight-macOS-Intel-3.0.0rc1.zip)**
 
-The tool exports liked songs and accessible playlists from either platform, plus playback records currently available from NetEase. It writes `music_for_ai.json`, `music_summary.md`, `AI_ANALYSIS_GUIDE.md`, and individual prompts. NetEase keeps its original `output/<nickname>_<uid>/` path; QQ uses `output/qq_music/<nickname>_<uid>/`. A joint profile is written to `output/combined/` when both platforms succeed.
+[All downloads and release notes](https://github.com/rhr-jz/netease-music-insight/releases/tag/portable-v3.0.0-rc.1) · [中文](README.md)
 
-The Windows desktop app restores previous exports offline, shows factual Dashboard statistics and local music search, and lets you read and copy independent prompts in its AI Center. You choose any AI that accepts file uploads; no API key is needed.
+These **3.0 RC1 prerelease** packages include the runtime components. No Python, Node, npm or AI API key is required. Windows 10/11 x64; Windows 11 ARM uses x64 compatibility. macOS 14 or later is recommended. The Mac apps are not Apple-notarized; first launch may require system security confirmation.
 
-**Local Web:** In a desktop build that includes the feature, open Settings and choose “启动 Web 版”, or run `python run_web.py` from source. The app opens the default browser on a random `127.0.0.1` port. It runs on your computer, not on an author-hosted website; other devices on your LAN cannot access it by default. Desktop and Web share the same Python Core, dashboard, and prompts. The Web interface can download the currently selected export files. See [quick start](docs/QUICK_START.md) and [architecture](docs/ARCHITECTURE.md).
+## What you can do
 
-**NetEase playback records are limited by what its service returns; QQ playback history has no verified reliable endpoint and is marked unavailable.** Collection and playlist timestamps are included only when the API actually returns a usable value. QQ's favorite-playlist order time is labeled separately because it may differ from the original subscription date. The exporter records inaccessible playlists and other gaps in `export_meta.issues`.
+- Organize liked songs, created and subscribed playlists, accessible tracks and available playback records.
+- Browse factual song, artist, album and playlist statistics; search your library and compare platforms.
+- Explore 13 AI prompt topics, shown according to your available data: music profile, taste, artists, habits, growth, discovery, listening plans and more.
+- Export JSON, Markdown and individual prompts; Local Web also offers ZIP downloads. Browse previously exported results offline.
 
-Your music data stays on your computer by default. QR credentials live only in memory during the session. This independent project uses unofficial interfaces that can change. QQ support uses [QQMusicApi](https://github.com/L-1124/QQMusicApi) (GPL-3.0-or-later); see [licenses](THIRD_PARTY_LICENSES.md), [privacy](PRIVACY.md), [data format](docs/DATA_FORMAT.md), and [FAQ](docs/FAQ.md).
+## Three steps
+
+1. Extract the **entire ZIP** and open `MusicInsight.exe` or `MusicInsight.app`.
+2. Choose NetEase, QQ or both; scan with the corresponding music app, confirm, and start organizing.
+3. Browse My Music. Copy a prompt in AI Analysis and upload your exported JSON to the AI you choose.
+
+ChatGPT, Claude, Gemini and other file-capable AI tools are supported. Music Insight does not automatically send your data to AI.
+
+Prefer a browser? Choose “启动 Web 版” in Settings or use the included `Open Local Web` launcher. This runs locally on your computer.
+
+![Music dashboard with synthetic demonstration data](assets/screenshots/dashboard.png)
+
+## Local data, honest limits
+
+These desktop and Local Web packages process data on your computer and do not upload playlists or account credentials to the author's server. Only music metadata is organized. Playback history and collection dates depend on what the platform actually returns; reliable complete QQ playback history is unavailable.
+
+## Learn more
+
+[Quick start](docs/QUICK_START.md) · [AI analysis](docs/AI_ANALYSIS.md) · [FAQ](docs/FAQ.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
+
+[Report an issue](https://github.com/rhr-jz/netease-music-insight/issues) · [Development](docs/DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [RC1 source](https://github.com/rhr-jz/netease-music-insight/tree/portable-v3.0.0-rc.1)
+
+[GPL-3.0-or-later](LICENSE) · [Third-party notices](THIRD_PARTY_LICENSES.md). An independent, unofficial project; not affiliated with NetEase Cloud Music or QQ Music.
